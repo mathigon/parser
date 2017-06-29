@@ -1,0 +1,20 @@
+{
+  "name": "@mathigon/textbooks-parser",
+  "version": "0.1.0",
+  "description": "",
+  "homepage": "https://mathigon.org/",
+  "author": {
+    "name": "Philipp Legner",
+    "email": "dev@mathigon.org",
+    "url": "https://mathigon.org"
+  },
+  "main": "index.js",
+  "repository": "mathigon/textbooks-parser",
+  "dependencies": {
+    "ascii2mathml": "^0.5.4",
+    "grunt": "^1.0.1",
+    "jade": "^1.11.0",
+    "marked": "^0.3.6",
+    "yamljs": "^0.2.9"
+  }
+}
