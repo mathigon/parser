@@ -1,8 +1,9 @@
 {
   "name": "@mathigon/textbooks-parser",
   "version": "0.1.0",
-  "description": "",
+  "description": "Custom markdown parsers for Mathigon textbooks.",
   "homepage": "https://mathigon.org/",
+  "license": "CC-BY-NC-ND-4.0",
   "author": {
     "name": "Philipp Legner",
     "email": "dev@mathigon.org",
