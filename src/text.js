@@ -4,6 +4,7 @@
 // =============================================================================
 
 
+const fs = require('fs');
 const path = require('path');
 const grunt = require('grunt');
 const marked = require('marked');
@@ -17,7 +18,7 @@ renderer.hr = function() { return `\n\n`; };
 renderer.br = function() { return `\n`; };
 renderer.code = renderer.paragraph = renderer.list = (text => `${text}\n\n`);
 renderer.codespan = renderer.strong = renderer.em = renderer.del = (code => code);
-renderer.image = ((href, title, text) => '');
+renderer.image = (() => '');
 
 function generate(text) {
   let result = text
@@ -40,8 +41,8 @@ function generate(text) {
     .trim();
 }
 
-module.exports = function(src, dest, root) {
-  if (!grunt.file.exists(src, 'content.md')) return;
-  const text = generate(grunt.file.read(src + '/content.md'));
-  return grunt.file.write(dest + '/content.txt', text);
+module.exports = function(src, dest) {
+  if (!fs.existsSync(path.join(src, 'content.md'))) return;
+  const text = generate(fs.readFileSync(path.join(src, 'content.md'), 'utf8'));
+  grunt.file.write(path.join(dest, 'content.txt'), text);
 };

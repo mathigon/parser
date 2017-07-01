@@ -4,29 +4,28 @@
 // =============================================================================
 
 
+const path = require('path');
 const full = require('./src/full');
 const text = require('./src/text');
 
 module.exports = function(grunt) {
-  grunt.registerMultiTask('textbooksParser',
+  grunt.registerMultiTask('textbooks',
     'Custom markdown parser for Mathigon textbooks.',
     function() {
 
       const options = this.options({
         full: true,
         text: false,
-        root: '../../textbooks'
+        root: '../textbooks'
       });
 
-      const chapters = this.files.map(function({src, dest}) {
-        src = path.join(__dirname, '../', src[0]);
-        let tasks = [];
-        if (options.full) tasks.push(full(src, dest, options.root));
-        if (options.text) tasks.push(text(src, dest, options.root));
-        return Promise.all(tasks);
-      });
+      this.files.map(function({src, dest}) {
+        let root = path.join(process.cwd(), options.root);
+        src = path.join(process.cwd(), src[0]);
+        dest = path.join(process.cwd(), dest);
 
-      let done = this.async();
-      return Promise.all(chapters).then(done).catch(grunt.fail.warn);
+        if (options.full) full(src, dest, root);
+        if (options.text) text(src, dest, root);
+      });
     });
 };

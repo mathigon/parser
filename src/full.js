@@ -4,6 +4,7 @@
 // =============================================================================
 
 
+const fs = require('fs');
 const path = require('path');
 const yaml = require('yamljs');
 const grunt = require('grunt');
@@ -191,14 +192,13 @@ function generate(path, text, allBios) {
 
 module.exports = function(src, dest, root) {
   // TODO convert allBios to YAML and parse here
-  const allBios = require('../../textbooks/shared/bios.json');
+  const allBios = require(root + '/shared/bios.json');
 
-  src = path.join(__dirname, '../', src[0]);
   let id = src.split('/')[src.split('/').length - 1];
 
   // DEPRECATED Old chapters that have JADE rather than Markdown.
-  if (!grunt.file.exists(src, 'content.md')) {
-    let content = grunt.file.read(src + '/content.jade');
+  if (!fs.existsSync(path.join(src, 'content.md'))) {
+    let content = fs.readFileSync(path.join(src, 'content.jade'), 'utf8');
     let html = jade.render(content, {filename: src + '/content.jade'});
 
     let bios = {};
@@ -206,19 +206,16 @@ module.exports = function(src, dest, root) {
       bios[b] = allBios[b];
     }
 
-    return Promise.all([
-      grunt.file.write(dest + '/content.html', html),
-      grunt.file.write(dest + '/bios.json', JSON.stringify(bios))
-    ]);
+    grunt.file.write(path.join(dest, 'content.html'), html);
+    grunt.file.write(path.join(dest, 'bios.json'), JSON.stringify(bios));
+    return;
   }
 
   // TODO convert glossary to YAML and parse here
-  let content = grunt.file.read(src + '/content.md');
+  let content = fs.readFileSync(path.join(src, 'content.md'), 'utf8');
   let {html, bios, data} = generate(id, content, allBios);
 
-  return Promise.all([
-    grunt.file.write(dest + '/content.html', html),
-    grunt.file.write(dest + '/bios.json', bios),
-    grunt.file.write(dest + '/data.json', data)
-  ]);
+  grunt.file.write(path.join(dest, 'content.html'), html);
+  grunt.file.write(path.join(dest, 'bios.json'), bios);
+  grunt.file.write(path.join(dest, 'data.json'), data);
 };
