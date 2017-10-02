@@ -33,11 +33,11 @@ function decodeHTML(html) {
   return html;
 }
 
-function parseJade(text, path) {
+function parseJade(text, path, directory) {
   // Jade code is indented by two spaces, which we need to remove.
   text = text.slice(2).replace(/\n\s\s/g, '\n')
-    .replace(/(images|svg)\//g, (x, f) => `/resources/${path}/${f}/` );
-  return jade.render(text);
+    .replace(/(images)\//g, (x, f) => `/resources/${path}/${f}/` );
+  return jade.render(text, {filename: directory + '/content.jade'});
 }
 
 function parseSection(text) {
@@ -60,7 +60,7 @@ renderer.link = function(href, title, text) {
 };
 
 renderer.code = renderer.codespan = function(code) {
-  let maths = ascii2mathml(code, {bare: true});
+  let maths = ascii2mathml(decodeHTML(code), {bare: true});
   maths = maths.replace(/<mo>-<\/mo>/, '<mo>–</mo>');
   return '<span class="math">' + maths + '</span>';
   // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
@@ -68,11 +68,15 @@ renderer.code = renderer.codespan = function(code) {
   // math = minify(math, { collapseWhitespace: true });
 };
 
-function parseMarkdown(text, path) {
+function parseMarkdown(text, path, directory) {
   text = text
     .replace(/\[\[([^\]]+)\]\]/g, function(x, body) {
       if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
       return `<x-blank input="${body}"></x-blank>`;
+    })
+    .replace(/\:(\w+)\:/g, function(x, key) {
+      // TODO Use the emoji description, not the key.
+      return `<img class="emoji" width="20" height="20" src="/images/emoji/${key}.png"/>`;
     })
     .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, function(x, text, target) {
       return `<x-target to="${target}">${text}</x-target>`
@@ -100,9 +104,6 @@ function parseMarkdown(text, path) {
     let header = `${repeat('| ', columns)}|\n${repeat('| --- ', columns)}|\n`;
     text = header + text;
   }
-
-  // TODO Replace emojis :smile:
-  // TODO jade imports (e.g. SVGs)
 
   let result = marked(text, {renderer/*, sanitize: true, smartypants: true*/})
     .replace(/<([\w\-]+)>\{([^\}]+)\}\s*/g, function(x, tag, options) {
@@ -132,11 +133,11 @@ function parseMarkdown(text, path) {
 
 // -----------------------------------------------------------------------------
 
-function parsePart(part, path) {
-  return (part.startsWith('  ') ? parseJade : parseMarkdown)(part, path);
+function parsePart(part, path, directory) {
+  return (part.startsWith('  ') ? parseJade : parseMarkdown)(part, path, directory);
 }
 
-function generate(path, text, allBios) {
+function generate(path, text, allBios, directory) {
   // Filter out all comment lines:
   text = text.replace(/\n\s*\/\/[^\n]*\n/g, '\n');
 
@@ -151,7 +152,7 @@ function generate(path, text, allBios) {
     if (p.startsWith('---')) {
       // Section dividers
       let showIntro = result ? '' : intro;
-      if (part) result += parsePart(part, path);
+      if (part) result += parsePart(part, path, directory);
       part = '';
       if (result) result += '</section>';
       result += parseSection(p) + showIntro;
@@ -174,13 +175,13 @@ function generate(path, text, allBios) {
           part = p;
         }
       } else {
-        result += parsePart(part, path);
+        result += parsePart(part, path, directory);
         part = p;
       }
     }
   }
 
-  result += parsePart(part, path) + '</section>';
+  result += parsePart(part, path, directory) + '</section>';
   result = result.replace(/[\n\s]+/g, ' ');  // minify html
 
   let fullBios = {};
@@ -213,7 +214,7 @@ module.exports = function(src, dest, root) {
 
   // TODO convert glossary to YAML and parse here
   let content = fs.readFileSync(path.join(src, 'content.md'), 'utf8');
-  let {html, bios, data} = generate(id, content, allBios);
+  let {html, bios, data} = generate(id, content, allBios, src);
 
   grunt.file.write(path.join(dest, 'content.html'), html);
   grunt.file.write(path.join(dest, 'bios.json'), bios);
