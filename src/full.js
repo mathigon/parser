@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('yamljs');
 const grunt = require('grunt');
-const jade = require('jade');
+const pug = require('pug');
 const marked = require('marked');
 const ascii2mathml = require("ascii2mathml");
 
@@ -33,16 +33,16 @@ function decodeHTML(html) {
   return html;
 }
 
-function parseJade(text, path, directory) {
-  // Jade code is indented by two spaces, which we need to remove.
+function parsePug(text, path, directory) {
+  // Pug code is indented by two spaces, which we need to remove.
   text = text.slice(2).replace(/\n\s\s/g, '\n')
     .replace(/(images)\//g, (x, f) => `/resources/${path}/${f}/` );
-  return jade.render(text, {filename: directory + '/content.jade'});
+  return pug.render(text, {filename: directory + '/content.pug'});
 }
 
 function parseSection(text) {
   let tags = text.match('\-*(\{(.+)\})?')[2] || '';
-  return jade.render('section' + tags).replace('</section>', '');
+  return pug.render('section' + tags).replace('</section>', '');
 }
 
 // -----------------------------------------------------------------------------
@@ -61,14 +61,15 @@ renderer.link = function(href, title, text) {
 
 renderer.code = renderer.codespan = function(code) {
   let maths = ascii2mathml(decodeHTML(code), {bare: true});
-  maths = maths.replace(/<mo>-<\/mo>/, '<mo>–</mo>');
+  maths = maths.replace(/<mo>-<\/mo>/g, '<mo>–</mo>')
+    .replace(/<mo>(.)<\/mo>/g, (_, mo) =>  `<mo value="${mo}">${mo}<\/mo>`);
   return '<span class="math">' + maths + '</span>';
   // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
   // .replace(/<mo>\)<\/mo>\s*<\/mrow>/g, '</mfenced>');
   // math = minify(math, { collapseWhitespace: true });
 };
 
-function parseMarkdown(text, path, directory) {
+function parseMarkdown(text, _path, _directory) {
   text = text
     .replace(/\[\[([^\]]+)\]\]/g, function(x, body) {
       if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
@@ -108,7 +109,7 @@ function parseMarkdown(text, path, directory) {
   let result = marked(text, {renderer/*, sanitize: true, smartypants: true*/})
     .replace(/<([\w\-]+)>\{([^\}]+)\}\s*/g, function(x, tag, options) {
       // expand <p>{.x}</p> to <p class="x"></p>
-      return jade.render(tag + decodeHTML(options)).replace(/<\/.+>/, '');
+      return pug.render(tag + decodeHTML(options)).replace(/<\/.+>/, '');
     })
     .replace(/\$\{([^\}]+)\}\{([^\}]+)\}/g, function(x, body, slider) {
       return `<x-var bind="${slider}">\$\{${body}\}</x-var>`;
@@ -119,12 +120,12 @@ function parseMarkdown(text, path, directory) {
     .replace(/\[\{([^\}]+)\}\s*([^\]]*)\]/g, function(x, options, body) {
       // expand [{.x}] to <span class="x"></span>
       let tag = '.#('.includes(options[0]) ? 'span' : '';
-      return jade.render(decodeHTML(tag + options + ' ' + body));
+      return pug.render(decodeHTML(tag + options + ' ' + body));
     });
 
   if (blockTag) {
     result = result.replace(/^<([\w\-]+)>/g, function(x, tag) {
-      return jade.render(tag + decodeHTML(blockTag)).replace(/<\/.+>/, '');
+      return pug.render(tag + decodeHTML(blockTag)).replace(/<\/.+>/, '');
     });
   }
 
@@ -134,7 +135,7 @@ function parseMarkdown(text, path, directory) {
 // -----------------------------------------------------------------------------
 
 function parsePart(part, path, directory) {
-  return (part.startsWith('  ') ? parseJade : parseMarkdown)(part, path, directory);
+  return (part.startsWith('  ') ? parsePug : parseMarkdown)(part, path, directory);
 }
 
 function generate(path, text, allBios, directory) {
@@ -197,10 +198,10 @@ module.exports = function(src, dest, root) {
 
   let id = src.split('/')[src.split('/').length - 1];
 
-  // DEPRECATED Old chapters that have JADE rather than Markdown.
+  // DEPRECATED Old chapters that have Pug rather than Markdown.
   if (!fs.existsSync(path.join(src, 'content.md'))) {
-    let content = fs.readFileSync(path.join(src, 'content.jade'), 'utf8');
-    let html = jade.render(content, {filename: src + '/content.jade'});
+    let content = fs.readFileSync(path.join(src, 'content.pug'), 'utf8');
+    let html = pug.render(content, {filename: src + '/content.pug'});
 
     let bios = {};
     for (let b of content.match(/bio\(xid=['"]\w*['"]/g).map(b => b.slice(9, -1))) {

@@ -27,7 +27,7 @@ function generate(text) {
     .split(/\n\s*\n/)
     .splice(1, 1)  // Remove the second paragraph, which is data.
     .filter(p => !p.startsWith('---'))  // Remove section dividers.
-    .filter(p => !p.startsWith('  '))  // Remove Jade code.
+    .filter(p => !p.startsWith('  '))  // Remove Pug code.
     .join('\n\n')
     .replace(/\[\[([^\]]+)\]\]/g, (x, body) => body.split('|')[0])  // Blanks.
     .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, (x, text) => `${text}`)
