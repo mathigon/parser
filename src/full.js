@@ -13,8 +13,6 @@ const marked = require('marked');
 const ascii2mathml = require("ascii2mathml");
 
 
-const intro = '<div class="chapter-intro"><span class="user">Remember to <x-target to=".nav-link.dropdown-title">login</x-target> to save your progress and get personalised content.</span> <span class="size">This textbook works best on larger devices like tablets or laptops.</span></div>';
-
 let bios = [];
 
 // -----------------------------------------------------------------------------
@@ -152,11 +150,10 @@ function generate(path, text, allBios, directory) {
 
     if (p.startsWith('---')) {
       // Section dividers
-      let showIntro = result ? '' : intro;
       if (part) result += parsePart(part, path, directory);
       part = '';
       if (result) result += '</section>';
-      result += parseSection(p) + showIntro;
+      result += parseSection(p);
 
     } else if (!result) {
       // Into content that is not rendered
