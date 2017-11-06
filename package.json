@@ -9,12 +9,17 @@
     "email": "dev@mathigon.org",
     "url": "https://mathigon.org"
   },
+  "scripts": {
+    "test": "node test/test.js"
+  },
   "main": "index.js",
   "repository": "mathigon/textbooks-parser",
   "dependencies": {
     "ascii2mathml": "^0.5.4",
     "grunt": "^1.0.1",
+    "html-minifier": "^3.5.6",
     "marked": "^0.3.6",
+    "node-emoji": "^1.8.1",
     "pug": "^2.0.0-rc.4",
     "yamljs": "^0.2.9"
   }

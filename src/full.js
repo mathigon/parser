@@ -4,24 +4,27 @@
 // =============================================================================
 
 
-const fs = require('fs');
-const path = require('path');
 const yaml = require('yamljs');
-const grunt = require('grunt');
-const pug = require('pug');
 const marked = require('marked');
-const ascii2mathml = require("ascii2mathml");
+const ascii2mathml = require('ascii2mathml');
+const pug = require('pug');
+const JSDom = require('jsdom').JSDOM;
+const minify = require('html-minifier').minify;
+const emoji = require('node-emoji');
 
 
-let bios = [];
+let bios = new Set();
+let data = {sections: []};
+let currentSection = null;
+let currentDirectory = null;
+
+// TODO Make this less hacky (don't parse paragraphs in blockquotes and HTML).
+let originalP = null;
+let isParsingHTML = false;
+
 
 // -----------------------------------------------------------------------------
-
-function repeat(text, n) {
-  let result = text;
-  for (let i=1; i<n; ++i) result += text;
-  return result;
-}
+// Helper Functions
 
 function decodeHTML(html) {
   let replacements = [['amp', '&'], ['quot', '"'], ['apos', '\''], ['lt', '<'], ['gt', '>']];
@@ -31,190 +34,212 @@ function decodeHTML(html) {
   return html;
 }
 
-function parsePug(text, path, directory) {
-  // Pug code is indented by two spaces, which we need to remove.
-  text = text.slice(2).replace(/\n\s\s/g, '\n')
-    .replace(/(images)\//g, (x, f) => `/resources/${path}/${f}/` );
-  return pug.render(text, {filename: directory + '/content.pug'});
+function emojiImg(symbol, name) {
+  const code = symbol.codePointAt(0).toString(16);
+  return `<img class="emoji" width="20" height="20" src="/images/emoji/${code}.png" alt="${name}"/>`;
 }
 
-function parseSection(text) {
-  let tags = text.match('\-*(\{(.+)\})?')[2] || '';
-  return pug.render('section' + tags).replace('</section>', '');
+function nodes(element) {
+  let result = [];
+  for (let c of element.children) {
+    result.push(...nodes(c));
+    result.push(c);
+  }
+  return result;
 }
+
+function textNodes(element) {
+  let result = [];
+  for (let c of element.childNodes) {
+    if (c.nodeType === 3) {
+      result.push(c);
+    } else {
+      result.push(...textNodes(c));
+    }
+  }
+  return result;
+}
+
 
 // -----------------------------------------------------------------------------
+// Markdown Extensions
 
-const renderer = new marked.Renderer();
-
-renderer.link = function(href, title, text) {
-  if (href.startsWith('gloss:')) return `<x-gloss xid="${href.slice(6)}">${text}</x-gloss>`;
-  if (href.startsWith('bio:')) {
-    let id = href.slice(4);
-    if (!bios.includes(id)) bios.push(id);
-    return `<x-bio xid="${id}">${text}</x-bio>`;
+// HTML Tag Wrappers using ::: and indentation.
+function blockIndentation(source) {
+  const lines = source.split('\n');
+  let indent = 0;
+  let closeTags = [];
+  for (let i = 0; i < lines.length; ++i) {
+    if (!lines[i]) continue;  // Skip empty lines
+    if (lines[i].match(/^\s*/)[0].length < indent) {
+      indent -= 2;
+      lines[i-1] += '\n' + closeTags.pop();
+    }
+    lines[i] = lines[i].slice(indent);
+    if (lines[i].startsWith('::: ')) {
+      indent += 2;
+      let tags = pug.render(lines[i].slice(4)).split('</');
+      closeTags.push('</' + tags[1]);
+      lines[i] = tags[0];
+    }
   }
-  return `<a href="${href}" target="_blank">${text}</a>`;
-};
+  return lines.join('\n');
+}
 
-renderer.code = renderer.codespan = function(code) {
-  let maths = ascii2mathml(decodeHTML(code), {bare: true});
-  maths = maths.replace(/<mo>-<\/mo>/g, '<mo>–</mo>')
-    .replace(/<mo>(.)<\/mo>/g, (_, mo) =>  `<mo value="${mo}">${mo}<\/mo>`);
-  return '<span class="math">' + maths + '</span>';
-  // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
-  // .replace(/<mo>\)<\/mo>\s*<\/mrow>/g, '</mfenced>');
-  // math = minify(math, { collapseWhitespace: true });
-};
+function blockAttributes(node) {
+  let lastChild = node.childNodes[0]; //[node.childNodes.length - 1];
+  if (!lastChild || lastChild.nodeType !== 3) return;
 
-function parseMarkdown(text, _path, _directory) {
+  let match = lastChild.textContent.match(/^\{([^\}]+)\}/);
+  if (!match) return;
+
+  lastChild.textContent = lastChild.textContent.replace(match[0], '');
+
+  let div = node.ownerDocument.createElement('div');
+  div.innerHTML = pug.render(match[1]);
+
+  let replaced = div.children[0];
+
+  if (replaced.tagName === 'DIV') {
+    for (let a of Array.from(replaced.attributes)) {
+      node.setAttribute(a.name, a.value);
+    }
+  } else {
+    node.parentNode.replaceChild(replaced, node);
+    for (let c of node.childNodes) replaced.appendChild(c);
+  }
+}
+
+function parseParagraph(text) {
   text = text
     .replace(/\[\[([^\]]+)\]\]/g, function(x, body) {
       if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
       return `<x-blank input="${body}"></x-blank>`;
     })
-    .replace(/\:(\w+)\:/g, function(x, key) {
-      // TODO Use the emoji description, not the key.
-      return `<img class="emoji" width="20" height="20" src="/images/emoji/${key}.png"/>`;
-    })
-    .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, function(x, text, target) {
-      return `<x-target to="${target}">${text}</x-target>`
-    })
-    .replace(/\.subsection\(([\w\s\-]+)\)/g, function(x, text) {
-      return `.subsection(data-needs="${text}")`;
-    })
-    .replace(/\.gloss\(([\w\s\-]+)\)/g, function(x, text) {
-      return `(data-gloss="${text}")`;
-    })
-    .replace(/n't/g, 'n’t')
-    .replace(/t's/g, 't’s');
+    .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, '<x-target to="$2">$1</x-target>')  // Targets
+    .replace(/\$\{([^\}]+)\}\{([^\}]+)\}/g, '<x-var bind="$2">${$1}</x-var>')  // Variables
+    .replace(/\$\{([^\}]+)\}(?!\<\/x\-var\>)/g, '<span class="var">${$1}</span>')  // Variables
+    .replace(/(?:\^)(?=\S)(\S*)(?:\^)/g, '<sup>$1</sup>')  // Superscripts
+    .replace(/(?:\~)(?=\S)(\S*)(?:\~)/g, '<sub>$1</sub>')  // Subscripts
+    .replace(/(\w)'(\w)/g, '$1’$2');  // Single quotes
 
-  // Add classes to entire blocks
-  let rows = text.split('\n');
-  let blockTag = null;
-  if (rows[0].match(/^\{([^\}]+)\}$/)) {
-    blockTag = rows[0].slice(1, rows[0].length - 1).trim();
-    text = rows.slice(1).join('\n');
-  }
-
-  // Support tables without headers
-  if (text.startsWith('| ')) {
-    let columns = Math.max(...text.split('\n').map(row => row.split(' | ').length));
-    let header = `${repeat('| ', columns)}|\n${repeat('| --- ', columns)}|\n`;
-    text = header + text;
-  }
-
-  let result = marked(text, {renderer/*, sanitize: true, smartypants: true*/})
-    .replace(/<([\w\-]+)>\{([^\}]+)\}\s*/g, function(x, tag, options) {
-      // expand <p>{.x}</p> to <p class="x"></p>
-      return pug.render(tag + decodeHTML(options)).replace(/<\/.+>/, '');
-    })
-    .replace(/\$\{([^\}]+)\}\{([^\}]+)\}/g, function(x, body, slider) {
-      return `<x-var bind="${slider}">\$\{${body}\}</x-var>`;
-    })
-    .replace(/\$\{([^\}]+)\}(?!\<\/x\-var\>)/g, function(x, body) {
-      return `<span class="var">\$\{${body}\}</span>`;
-    })
-    .replace(/\[\{([^\}]+)\}\s*([^\]]*)\]/g, function(x, options, body) {
-      // expand [{.x}] to <span class="x"></span>
-      let tag = '.#('.includes(options[0]) ? 'span' : '';
-      return pug.render(decodeHTML(tag + options + ' ' + body));
-    });
-
-  if (blockTag) {
-    result = result.replace(/^<([\w\-]+)>/g, function(x, tag) {
-      return pug.render(tag + decodeHTML(blockTag)).replace(/<\/.+>/, '');
-    });
-  }
-
-  return result;
+  return emoji.emojify(text, x => x, emojiImg);
 }
+
 
 // -----------------------------------------------------------------------------
+// Custom Marked Renderer
 
-function parsePart(part, path, directory) {
-  return (part.startsWith('  ') ? parsePug : parseMarkdown)(part, path, directory);
-}
+const renderer = new marked.Renderer();
 
-function generate(path, text, allBios, directory) {
-  // Filter out all comment lines:
-  text = text.replace(/\n\s*\/\/[^\n]*\n/g, '\n');
-
-  let result = '';
-  let part = '';
-
-  bios = [];
-  let data = {};
-
-  for (let p of text.split(/\n\s*\n/)) {
-
-    if (p.startsWith('---')) {
-      // Section dividers
-      if (part) result += parsePart(part, path, directory);
-      part = '';
-      if (result) result += '</section>';
-      result += parseSection(p);
-
-    } else if (!result) {
-      // Into content that is not rendered
-      if (p.startsWith('#')) {
-        data.title = p.slice(2);
-      } else {
-        Object.assign(data, yaml.parse(p));
-      }
-
-    } else {
-      // Actual content
-      if (p.startsWith('  ')) {
-        if (part.startsWith('  ')) {
-          part += '\n' + p;
-        } else {
-          result += parseMarkdown(part, path);
-          part = p;
-        }
-      } else {
-        result += parsePart(part, path, directory);
-        part = p;
-      }
-    }
+// Glossary, bios and external links
+renderer.link = function(href, title, text) {
+  if (href.startsWith('gloss:')) {
+    return `<x-gloss xid="${href.slice(6)}">${text}</x-gloss>`;
   }
 
-  result += parsePart(part, path, directory) + '</section>';
-  result = result.replace(/[\n\s]+/g, ' ');  // minify html
-
-  let fullBios = {};
-  for (let b of bios) fullBios[b] = allBios[b];
-
-  return {html: result, bios: JSON.stringify(fullBios), data: JSON.stringify(data)};
-}
-
-
-module.exports = function(src, dest, root) {
-  // TODO convert allBios to YAML and parse here
-  const allBios = require(root + '/shared/bios.json');
-
-  let id = src.split('/')[src.split('/').length - 1];
-
-  // DEPRECATED Old chapters that have Pug rather than Markdown.
-  if (!fs.existsSync(path.join(src, 'content.md'))) {
-    let content = fs.readFileSync(path.join(src, 'content.pug'), 'utf8');
-    let html = pug.render(content, {filename: src + '/content.pug'});
-
-    let bios = {};
-    for (let b of content.match(/bio\(xid=['"]\w*['"]/g).map(b => b.slice(9, -1))) {
-      bios[b] = allBios[b];
-    }
-
-    grunt.file.write(path.join(dest, 'content.html'), html);
-    grunt.file.write(path.join(dest, 'bios.json'), JSON.stringify(bios));
-    return;
+  if (href.startsWith('bio:')) {
+    let id = href.slice(4);
+    bios.add(id);
+    return `<x-bio xid="${id}">${text}</x-bio>`;
   }
 
-  // TODO convert glossary to YAML and parse here
-  let content = fs.readFileSync(path.join(src, 'content.md'), 'utf8');
-  let {html, bios, data} = generate(id, content, allBios, src);
+  return `<a href="${href}" target="_blank">${text}</a>`;
+};
 
-  grunt.file.write(path.join(dest, 'content.html'), html);
-  grunt.file.write(path.join(dest, 'bios.json'), bios);
-  grunt.file.write(path.join(dest, 'data.json'), data);
+renderer.heading = function (text, level) {
+  if (level === 1) {
+    data.title = text;
+    return '';
+  }
+  return `<h${level}>${text}</h${level}>`;
+};
+
+renderer.codespan = function(code) {
+  let maths = ascii2mathml(decodeHTML(code), {bare: true});
+  maths = maths.replace(/<mo>-<\/mo>/g, '<mo>–</mo>')
+    .replace(/<mo>(.)<\/mo>/g, (_, mo) =>  `<mo value="${mo}">${mo}<\/mo>`);
+  return `<span class="math">${maths}</span>`;
+  // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
+  // .replace(/<mo>\)<\/mo>\s*<\/mrow>/g, '</mfenced>');
+  // math = minify(math, { collapseWhitespace: true });
+};
+
+renderer.blockquote = function(quote) {
+  const documentData = yaml.parse(originalP || quote);
+  Object.assign(currentSection || data, documentData);
+  return '';
+};
+
+renderer.hr = function() {
+  let previous = currentSection;
+  currentSection = {};
+  data.sections.push(currentSection);
+  return previous ? '</section><section>' : '<section>';
+};
+
+// Indented Puh HTML blocks
+renderer.code = function(code) {
+  return pug.render(code, {filename: currentDirectory + '/content.pug'});
+};
+
+// Parse markdown inside
+renderer.html = function(html) {
+  const body = (new JSDom(html)).window.document.body;
+
+  isParsingHTML = true;
+  for (let t of textNodes(body)) {
+    t.textContent = marked(t.textContent, {renderer});
+  }
+  isParsingHTML = false;
+
+  return body.innerHTML.trim();
+};
+
+renderer.listitem = function(text) {
+  return '<li>' + parseParagraph(text) + '</li>';
+};
+
+renderer.paragraph = function(text) {
+  originalP = text;
+  if (isParsingHTML) return parseParagraph(text);
+  return '<p>' + parseParagraph(text) + '</p>';
+};
+
+
+// -----------------------------------------------------------------------------
+// Run Markdown Parser
+
+module.exports = function(id, content, path) {
+  bios = new Set();
+  data = {sections: []};
+  currentSection = null;
+  currentDirectory = path;
+
+  // Image URLs
+  content = content
+    .replace(/url\(images\//g, `url(/resources/${id}/images/`)
+    .replace(/src="images\//g, `src="/resources/${id}/images/`);
+
+  // Custom Markdown Extensions
+  // TODO parse tables without headers
+  // TODO parse subsections
+  content = blockIndentation(content);
+
+  const parsed = marked(content, {renderer}) + '</section>';
+  const doc = (new JSDom(parsed)).window.document;
+
+  // Parse element attributes
+  // TODO parse attributes for <ul> and <table>
+  for (let n of nodes(doc.body)) blockAttributes(n);
+
+  // Add section IDs
+  const $sections = doc.body.querySelectorAll('section');
+  for (let i = 0; i < $sections.length; ++i) {
+    if (data.sections[i].id) $sections[i].id = data.sections[i].id;
+  }
+
+  const html = minify(doc.body.innerHTML,
+    {collapseWhitespace: true, conservativeCollapse: true});
+  return {html, bios, data};
 };
