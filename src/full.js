@@ -52,7 +52,7 @@ function textNodes(element) {
   let result = [];
   for (let c of element.childNodes) {
     if (c.nodeType === 3) {
-      result.push(c);
+      if (c.textContent.trim()) result.push(c);
     } else {
       result.push(...textNodes(c));
     }
@@ -69,20 +69,29 @@ function blockIndentation(source) {
   const lines = source.split('\n');
   let indent = 0;
   let closeTags = [];
+
   for (let i = 0; i < lines.length; ++i) {
-    if (!lines[i]) continue;  // Skip empty lines
-    if (lines[i].match(/^\s*/)[0].length < indent) {
-      indent -= 2;
-      lines[i-1] += '\n' + closeTags.pop();
+    if (!lines[i].trim()) continue;  // Skip empty lines
+    const currentIndent = lines[i].match(/^\s*/)[0].length;
+    const dIndent = indent - currentIndent;
+    if (dIndent > 0) {
+      indent -= dIndent;
+      lines[i-1] += '\n\n';
+      for (let t=0; t < dIndent/2; ++t) {
+        lines[i-1] += closeTags.pop() + '\n';
+      }
     }
     lines[i] = lines[i].slice(indent);
     if (lines[i].startsWith('::: ')) {
       indent += 2;
       let tags = pug.render(lines[i].slice(4)).split('</');
       closeTags.push('</' + tags[1]);
-      lines[i] = tags[0];
+      lines[i] = tags[0] + '\n';
     }
   }
+
+  while(closeTags.length)  lines.push(closeTags.pop());
+
   return lines.join('\n');
 }
 
@@ -186,11 +195,13 @@ renderer.code = function(code) {
 // Parse markdown inside
 renderer.html = function(html) {
   const body = (new JSDom(html)).window.document.body;
+  const text = textNodes(body);
+
+  // Don't parse HTML if it doesn't contain text (e.g. just an open/close tag).
+  if (!text.length) return html;
 
   isParsingHTML = true;
-  for (let t of textNodes(body)) {
-    t.textContent = marked(t.textContent, {renderer});
-  }
+  for (let t of text) t.textContent = marked(t.textContent, {renderer});
   isParsingHTML = false;
 
   return body.innerHTML.trim();
@@ -226,8 +237,13 @@ module.exports = function(id, content, path) {
   // TODO parse subsections
   content = blockIndentation(content);
 
-  const parsed = marked(content, {renderer}) + '</section>';
-  const doc = (new JSDom(parsed)).window.document;
+  // TODO fix consecutive HTML detection in marked.js
+  const lexer = new marked.Lexer();
+  lexer.rules.html = /^<.*[\n]{2,}/;
+  const tokens = lexer.lex(content);
+  const parsed = marked.Parser.parse(tokens, {renderer});
+
+  const doc = (new JSDom(parsed + '</section>')).window.document;
 
   // Parse element attributes
   // TODO parse attributes for <ul> and <table>

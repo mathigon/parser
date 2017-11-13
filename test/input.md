@@ -62,3 +62,18 @@ Here is a paragraph
   More text
 
 More text 
+
+---
+
+::: .row
+  ::: .grow
+    Right Triangle: When a triangle has one right angle.
+
+  ::: .grow
+  
+    Obtuse Triangle: When a triangle has one obtuse angle.
+
+  ::: .grow
+    Acute Triangle: When all three angles in the triangle are acute.
+
+Here is a paragraph
