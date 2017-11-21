@@ -10,7 +10,7 @@ const marked = require('marked');
 const yaml = require('yamljs');
 const pug = require('pug');
 
-const parseFull = require('./src/full');
+const {parseFull, renderer} = require('./src/full');
 // const parseText = require('./src/text');
 
 
@@ -29,7 +29,7 @@ function generate(grunt, src, dest, id, allBios) {
 
   if (fs.existsSync(src + '/glossary.yaml')) {
     const gloss = yaml.load(src + '/glossary.yaml');
-    for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text);
+    for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
     grunt.file.write(dest + '/glossary.json', JSON.stringify(gloss));
   }
 
@@ -61,7 +61,7 @@ module.exports = function(grunt) {
       const root = path.join(process.cwd(), options.root);
 
       const bios = yaml.load(root + '/shared/bios.yaml');
-      for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio);
+      for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
 
       for (let file of this.files) {
         const id = file.src[0].split('/')[file.src[0].split('/').length - 1];

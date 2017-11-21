@@ -67,30 +67,20 @@ function textNodes(element) {
 // HTML Tag Wrappers using ::: and indentation.
 function blockIndentation(source) {
   const lines = source.split('\n');
-  let indent = 0;
   let closeTags = [];
 
   for (let i = 0; i < lines.length; ++i) {
-    if (!lines[i].trim()) continue;  // Skip empty lines
-    const currentIndent = lines[i].match(/^\s*/)[0].length;
-    const dIndent = indent - currentIndent;
-    if (dIndent > 0) {
-      indent -= dIndent;
-      lines[i-1] += '\n\n';
-      for (let t=0; t < dIndent/2; ++t) {
-        lines[i-1] += closeTags.pop() + '\n';
-      }
-    }
-    lines[i] = lines[i].slice(indent);
-    if (lines[i].startsWith('::: ')) {
-      indent += 2;
-      let tags = pug.render(lines[i].slice(4)).split('</');
-      closeTags.push('</' + tags[1]);
-      lines[i] = tags[0] + '\n';
+    if (!lines[i].startsWith(':::')) continue;
+    const tag = lines[i].slice(4);
+
+    if (tag) {
+      let wrap = pug.render(tag).split('</');
+      closeTags.push('</' + wrap[1]);
+      lines[i] = wrap[0] + '\n';
+    } else {
+      lines[i] = '\n' + closeTags.pop() + '\n';
     }
   }
-
-  while(closeTags.length)  lines.push(closeTags.pop());
 
   return lines.join('\n');
 }
@@ -153,6 +143,11 @@ renderer.link = function(href, title, text) {
     return `<x-bio xid="${id}">${text}</x-bio>`;
   }
 
+  if (href.startsWith('target:')) {
+    let id = href.slice(7);
+    return `<span class="geo-target" to="${id}">${text}</span>`;
+  }
+
   return `<a href="${href}" target="_blank">${text}</a>`;
 };
 
@@ -167,6 +162,7 @@ renderer.heading = function (text, level) {
 renderer.codespan = function(code) {
   let maths = ascii2mathml(decodeHTML(code), {bare: true});
   maths = maths.replace(/<mo>-<\/mo>/g, '<mo>–</mo>')
+    .replace(/\s*accent="true"/g, '')
     .replace(/<mo>(.)<\/mo>/g, (_, mo) =>  `<mo value="${mo}">${mo}<\/mo>`);
   return `<span class="math">${maths}</span>`;
   // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
@@ -221,7 +217,8 @@ renderer.paragraph = function(text) {
 // -----------------------------------------------------------------------------
 // Run Markdown Parser
 
-module.exports = function(id, content, path) {
+module.exports.renderer = renderer;
+module.exports.parseFull = function(id, content, path) {
   bios = new Set();
   data = {sections: []};
   currentSection = null;

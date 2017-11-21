@@ -54,26 +54,35 @@ and PUG code
 Here is a paragraph
 
 ::: article.row
-  Here is an _indented_ block
-  
-  ::: .nested
-    More __text__
-  
-  More text
+Here is an _indented_ block
+
+::: .nested
+More __text__
+:::
+
+More text
+:::
 
 More text 
 
 ---
 
 ::: .row
-  ::: .grow
-    Right Triangle: When a triangle has one right angle.
+::: .grow
 
-  ::: .grow
-  
-    Obtuse Triangle: When a triangle has one obtuse angle.
+Right Triangle: When a triangle has one right angle.
 
-  ::: .grow
-    Acute Triangle: When all three angles in the triangle are acute.
+:::
+::: .grow
+
+Obtuse Triangle: When a triangle has one obtuse angle.
+
+:::
+::: .grow
+
+Acute Triangle: When all three angles in the triangle are acute.
+
+:::
+:::
 
 Here is a paragraph
