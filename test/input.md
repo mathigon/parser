@@ -16,7 +16,8 @@ Here is a paragraph with [Biographies](bio:gauss) of [People](bio:euler),
 [Targets](-> #id .class).
 
 Here is a paragraph with [[blanks|gaps]] and [[100]] input, as well as
-variables like ${x|1|0,1,10}{x} and ${x}.
+variables like ${x|1|0,1,10}{x} and ${x}. You can also have _{span.class} blanks
+inside [[a|b|c]] tags_.
 
 Here is a paragraph with maths: `x^2 + 4x - 20/2`{#m .my-math}.
 
@@ -67,22 +68,12 @@ More text
 
 ---
 
-::: .row
-::: .grow
-
+::: column(width=410)
 Right Triangle: When a triangle has one right angle.
-
-:::
-::: .grow
-
+::: column.grow
 Obtuse Triangle: When a triangle has one obtuse angle.
-
-:::
-::: .grow
-
+::: column
 Acute Triangle: When all three angles in the triangle are acute.
-
-:::
 :::
 
 Here is a paragraph

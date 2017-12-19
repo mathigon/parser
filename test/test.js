@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const parseFull = require('../src/full');
+const {parseFull} = require('../src/full');
 
 
 const dir = path.join(process.cwd(), 'test');

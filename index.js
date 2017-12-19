@@ -16,10 +16,10 @@ const {parseFull, renderer} = require('./src/full');
 
 // -----------------------------------------------------------------------------
 
-function generate(grunt, src, dest, id, allBios) {
+function generate(grunt, src, dest, id, allBios, allGloss) {
   let content = fs.readFileSync(src + '/content.md', 'utf8');
 
-  let {html, bios, data} = parseFull(id, content, src);
+  let {html, bios, gloss, data} = parseFull(id, content, src);
   grunt.file.write(dest + '/content.html', html);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
 
@@ -27,11 +27,9 @@ function generate(grunt, src, dest, id, allBios) {
   for (let b of bios) biosObj[b] = allBios[b];
   grunt.file.write(dest + '/bios.json', JSON.stringify(biosObj));
 
-  if (fs.existsSync(src + '/glossary.yaml')) {
-    const gloss = yaml.load(src + '/glossary.yaml');
-    for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
-    grunt.file.write(dest + '/glossary.json', JSON.stringify(gloss));
-  }
+  let glossObj = {};
+  for (let g of gloss) glossObj[g] = allGloss[g];
+  grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
 
   // let text = parseText(id, content);
   // grunt.file.write(dest + '/content.txt', text);
@@ -63,13 +61,16 @@ module.exports = function(grunt) {
       const bios = yaml.load(root + '/shared/bios.yaml');
       for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
 
+      const gloss = yaml.load(root + '/shared/glossary.yaml');
+      for (let g of Object.keys(gloss)) gloss[g] = marked(gloss[g], {renderer});
+
       for (let file of this.files) {
         const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
         const src = path.join(process.cwd(), file.src[0]);
         const dest = path.join(process.cwd(), file.dest);
 
         if (fs.existsSync(src + '/content.md')) {
-          generate(grunt, src, dest, id, bios)
+          generate(grunt, src, dest, id, bios, gloss)
         } else {
           generateOld(grunt, src, dest, bios);
         }

@@ -11,11 +11,12 @@ const pug = require('pug');
 const JSDom = require('jsdom').JSDOM;
 const minify = require('html-minifier').minify;
 const emoji = require('node-emoji');
-
+const entities = require('html-entities').AllHtmlEntities;
 
 let bios = new Set();
-let data = {sections: []};
-let currentSection = null;
+let gloss = new Set();
+let data = {steps: []};
+let currentStep = null;
 let currentDirectory = null;
 
 // TODO Make this less hacky (don't parse paragraphs in blockquotes and HTML).
@@ -25,14 +26,6 @@ let isParsingHTML = false;
 
 // -----------------------------------------------------------------------------
 // Helper Functions
-
-function decodeHTML(html) {
-  let replacements = [['amp', '&'], ['quot', '"'], ['apos', '\''], ['lt', '<'], ['gt', '>']];
-  for (let r of replacements) {
-    html = html.replace(new RegExp('&' + r[0] + ';', 'g'), r[1]);
-  }
-  return html;
-}
 
 function emojiImg(symbol, name) {
   const code = symbol.codePointAt(0).toString(16);
@@ -68,15 +61,28 @@ function textNodes(element) {
 function blockIndentation(source) {
   const lines = source.split('\n');
   let closeTags = [];
+  let column = null;
 
   for (let i = 0; i < lines.length; ++i) {
     if (!lines[i].startsWith(':::')) continue;
     const tag = lines[i].slice(4);
 
-    if (tag) {
+    if (tag.startsWith('column')) {
+      let col = pug.render(tag.replace('column', 'div')).split('</')[0];
+      col = col.replace(/width="([0-9]+)"/, 'style="width: $1px"');
+      if (column) {
+        lines[i] = '\n</div>' + col + '\n';
+      } else {
+        lines[i] = '<div class="row padded">' + col + '\n';
+        column = true;
+      }
+    } else if (tag) {
       let wrap = pug.render(tag).split('</');
       closeTags.push('</' + wrap[1]);
       lines[i] = wrap[0] + '\n';
+    } else if (column) {
+      lines[i] = '\n</div></div>\n';
+      column = false;
     } else {
       lines[i] = '\n' + closeTags.pop() + '\n';
     }
@@ -100,12 +106,11 @@ function blockAttributes(node) {
   let replaced = div.children[0];
 
   if (replaced.tagName === 'DIV') {
-    for (let a of Array.from(replaced.attributes)) {
-      node.setAttribute(a.name, a.value);
-    }
+    const attributes = Array.from(replaced.attributes);
+    for (let a of attributes) node.setAttribute(a.name, a.value);
   } else {
+    while (node.firstChild) replaced.appendChild(node.firstChild);
     node.parentNode.replaceChild(replaced, node);
-    for (let c of node.childNodes) replaced.appendChild(c);
   }
 }
 
@@ -118,8 +123,8 @@ function parseParagraph(text) {
     .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, '<x-target to="$2">$1</x-target>')  // Targets
     .replace(/\$\{([^\}]+)\}\{([^\}]+)\}/g, '<x-var bind="$2">${$1}</x-var>')  // Variables
     .replace(/\$\{([^\}]+)\}(?!\<\/x\-var\>)/g, '<span class="var">${$1}</span>')  // Variables
-    .replace(/(?:\^)(?=\S)(\S*)(?:\^)/g, '<sup>$1</sup>')  // Superscripts
-    .replace(/(?:\~)(?=\S)(\S*)(?:\~)/g, '<sub>$1</sub>')  // Subscripts
+    .replace(/(?:\^\^)(?=\S)(\S*)(?:\^\^)/g, '<sup>$1</sup>')  // Superscripts
+    .replace(/(?:~~)(?=\S)(\S*)(?:~~)/g, '<sub>$1</sub>')  // Subscripts
     .replace(/(\w)'(\w)/g, '$1’$2');  // Single quotes
 
   return emoji.emojify(text, x => x, emojiImg);
@@ -134,7 +139,9 @@ const renderer = new marked.Renderer();
 // Glossary, bios and external links
 renderer.link = function(href, title, text) {
   if (href.startsWith('gloss:')) {
-    return `<x-gloss xid="${href.slice(6)}">${text}</x-gloss>`;
+    let id = href.slice(6);
+    gloss.add(id);
+    return `<x-gloss xid="${id}">${text}</x-gloss>`;
   }
 
   if (href.startsWith('bio:')) {
@@ -145,7 +152,7 @@ renderer.link = function(href, title, text) {
 
   if (href.startsWith('target:')) {
     let id = href.slice(7);
-    return `<span class="geo-target" to="${id}">${text}</span>`;
+    return `<span class="step-target" data-to="${id}">${text}</span>`;
   }
 
   return `<a href="${href}" target="_blank">${text}</a>`;
@@ -160,7 +167,7 @@ renderer.heading = function (text, level) {
 };
 
 renderer.codespan = function(code) {
-  let maths = ascii2mathml(decodeHTML(code), {bare: true});
+  let maths = ascii2mathml(entities.decode(code), {bare: true});
   maths = maths.replace(/<mo>-<\/mo>/g, '<mo>–</mo>')
     .replace(/\s*accent="true"/g, '')
     .replace(/<mo>(.)<\/mo>/g, (_, mo) =>  `<mo value="${mo}">${mo}<\/mo>`);
@@ -172,15 +179,15 @@ renderer.codespan = function(code) {
 
 renderer.blockquote = function(quote) {
   const documentData = yaml.parse(originalP || quote);
-  Object.assign(currentSection || data, documentData);
+  Object.assign(currentStep || data, documentData);
   return '';
 };
 
 renderer.hr = function() {
-  let previous = currentSection;
-  currentSection = {};
-  data.sections.push(currentSection);
-  return previous ? '</section><section>' : '<section>';
+  let previous = currentStep;
+  currentStep = {};
+  data.steps.push(currentStep);
+  return previous ? '</x-step><x-step>' : '<x-step>';
 };
 
 // Indented Puh HTML blocks
@@ -220,8 +227,9 @@ renderer.paragraph = function(text) {
 module.exports.renderer = renderer;
 module.exports.parseFull = function(id, content, path) {
   bios = new Set();
-  data = {sections: []};
-  currentSection = null;
+  gloss = new Set();
+  data = {steps: []};
+  currentStep = null;
   currentDirectory = path;
 
   // Image URLs
@@ -229,9 +237,11 @@ module.exports.parseFull = function(id, content, path) {
     .replace(/url\(images\//g, `url(/resources/${id}/images/`)
     .replace(/src="images\//g, `src="/resources/${id}/images/`);
 
+  // Replace reveal goals
+  content = content.replace(/when=/g, 'data-when=');
+
   // Custom Markdown Extensions
   // TODO parse tables without headers
-  // TODO parse subsections
   content = blockIndentation(content);
 
   // TODO fix consecutive HTML detection in marked.js
@@ -240,19 +250,21 @@ module.exports.parseFull = function(id, content, path) {
   const tokens = lexer.lex(content);
   const parsed = marked.Parser.parse(tokens, {renderer});
 
-  const doc = (new JSDom(parsed + '</section>')).window.document;
+  const doc = (new JSDom(parsed + '</x-step>')).window.document;
 
   // Parse element attributes
   // TODO parse attributes for <ul> and <table>
   for (let n of nodes(doc.body)) blockAttributes(n);
 
-  // Add section IDs
-  const $sections = doc.body.querySelectorAll('section');
-  for (let i = 0; i < $sections.length; ++i) {
-    if (data.sections[i].id) $sections[i].id = data.sections[i].id;
+  // Add step IDs
+  const $steps = doc.body.querySelectorAll('x-step');
+  for (let i = 0; i < $steps.length; ++i) {
+    let d = data.steps[i];
+    $steps[i].id = d.id || 'step-' + i;
+    if (d.class) $steps[i].setAttribute('class', d.class);
   }
 
   const html = minify(doc.body.innerHTML,
     {collapseWhitespace: true, conservativeCollapse: true});
-  return {html, bios, data};
+  return {html, bios, gloss, data};
 };

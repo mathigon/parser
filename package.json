@@ -17,6 +17,7 @@
   "dependencies": {
     "ascii2mathml": "^0.5.4",
     "grunt": "^1.0.1",
+    "html-entities": "^1.2.1",
     "html-minifier": "^3.5.6",
     "marked": "^0.3.6",
     "node-emoji": "^1.8.1",
