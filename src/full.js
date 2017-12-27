@@ -168,9 +168,10 @@ renderer.heading = function (text, level) {
 
 renderer.codespan = function(code) {
   let maths = ascii2mathml(entities.decode(code), {bare: true});
-  maths = maths.replace(/<mo>-<\/mo>/g, '<mo>–</mo>')
+  maths = maths.replace(/<mo>-<\/mo>/g, '<mo>−</mo>')
     .replace(/\s*accent="true"/g, '')
-    .replace(/<mo>(.)<\/mo>/g, (_, mo) =>  `<mo value="${mo}">${mo}<\/mo>`);
+    .replace(/lspace="0" rspace="0">′/g, '>′')
+    .replace(/>(.)<\/mo>/g, (_, mo) =>  ` value="${mo}">${mo}</mo>`);
   return `<span class="math">${maths}</span>`;
   // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
   // .replace(/<mo>\)<\/mo>\s*<\/mrow>/g, '</mfenced>');
