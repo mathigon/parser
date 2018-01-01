@@ -27,6 +27,10 @@ let isParsingHTML = false;
 // -----------------------------------------------------------------------------
 // Helper Functions
 
+function last(x) {
+  return x[x.length - 1];
+}
+
 function emojiImg(symbol, name) {
   const code = symbol.codePointAt(0).toString(16);
   return `<img class="emoji" width="20" height="20" src="/images/emoji/${code}.png" alt="${name}"/>`;
@@ -61,31 +65,44 @@ function textNodes(element) {
 function blockIndentation(source) {
   const lines = source.split('\n');
   let closeTags = [];
-  let column = null;
+  let nested = [];
 
   for (let i = 0; i < lines.length; ++i) {
     if (!lines[i].startsWith(':::')) continue;
     const tag = lines[i].slice(4);
 
+    if (!tag) {
+      lines[i] = '\n' + closeTags.pop() + '\n';
+      nested.pop();
+      continue;
+    }
+
     if (tag.startsWith('column')) {
       let col = pug.render(tag.replace('column', 'div')).split('</')[0];
       col = col.replace(/width="([0-9]+)"/, 'style="width: $1px"');
-      if (column) {
+      if (last(nested) === 'column') {
         lines[i] = '\n</div>' + col + '\n';
       } else {
         lines[i] = '<div class="row padded">' + col + '\n';
-        column = true;
+        nested.push('column');
+        closeTags.push('</div></div>')
       }
-    } else if (tag) {
+    } else if (tag.startsWith('tab')) {
+      let col = pug.render(tag.replace('tab', '.tab')).split('</')[0];
+      if (last(nested) === 'tab') {
+        lines[i] = '\n</div>' + col + '\n';
+      } else {
+        lines[i] = '<x-tabbox>' + col + '\n';
+        nested.push('tab');
+        closeTags.push('</div></x-tabbox>')
+      }
+    } else {
       let wrap = pug.render(tag).split('</');
       closeTags.push('</' + wrap[1]);
       lines[i] = wrap[0] + '\n';
-    } else if (column) {
-      lines[i] = '\n</div></div>\n';
-      column = false;
-    } else {
-      lines[i] = '\n' + closeTags.pop() + '\n';
+      nested.push('');
     }
+
   }
 
   return lines.join('\n');
@@ -236,7 +253,8 @@ module.exports.parseFull = function(id, content, path) {
   // Image URLs
   content = content
     .replace(/url\(images\//g, `url(/resources/${id}/images/`)
-    .replace(/src="images\//g, `src="/resources/${id}/images/`);
+    .replace(/src="images\//g, `src="/resources/${id}/images/`)
+    .replace(/href="images\//g, `href="/resources/${id}/images/`);
 
   // Replace reveal goals
   content = content.replace(/when=/g, 'data-when=');

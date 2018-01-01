@@ -31,6 +31,13 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
   for (let g of gloss) glossObj[g] = allGloss[g];
   grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
 
+  const hintsObj = {};
+  if (fs.existsSync(src + '/hints.yaml')) {
+    const hints = yaml.load(src + '/hints.yaml');
+    for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
+  }
+  grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
+
   // let text = parseText(id, content);
   // grunt.file.write(dest + '/content.txt', text);
 }
