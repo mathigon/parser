@@ -135,7 +135,7 @@ function parseParagraph(text) {
   text = text
     .replace(/\[\[([^\]]+)\]\]/g, function(x, body) {
       if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
-      return `<x-blank input="${body}"></x-blank>`;
+      return `<x-blank-input solution="${body}"></x-blank-input>`;
     })
     .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, '<x-target to="$2">$1</x-target>')  // Targets
     .replace(/\$\{([^\}]+)\}\{([^\}]+)\}/g, '<x-var bind="$2">${$1}</x-var>')  // Variables
@@ -280,8 +280,17 @@ module.exports.parseFull = function(id, content, path) {
   for (let i = 0; i < $steps.length; ++i) {
     let d = data.steps[i];
     $steps[i].id = d.id || 'step-' + i;
+    if (d.goals) $steps[i].setAttribute('goals', d.goals);
     if (d.class) $steps[i].setAttribute('class', d.class);
   }
+
+  const $parents = doc.body.querySelectorAll('[parent]');
+  for (let $p of $parents) {
+    const classes = $p.getAttribute('parent').split(' ');
+    $p.removeAttribute('parent');
+    $p.parentNode.classList.add(...classes);
+  }
+
 
   const html = minify(doc.body.innerHTML,
     {collapseWhitespace: true, conservativeCollapse: true});

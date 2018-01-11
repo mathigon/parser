@@ -52,6 +52,13 @@ function generateOld(grunt, src, dest, allBios) {
     bios[b] = allBios[b];
   }
 
+  const hintsObj = {};
+  if (fs.existsSync(src + '/hints.yaml')) {
+    const hints = yaml.load(src + '/hints.yaml');
+    for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
+  }
+  grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
+
   grunt.file.write(dest + '/content.html', html);
   grunt.file.write(dest + '/bios.json', JSON.stringify(bios));
 }
@@ -69,7 +76,7 @@ module.exports = function(grunt) {
       for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
 
       const gloss = yaml.load(root + '/shared/glossary.yaml');
-      for (let g of Object.keys(gloss)) gloss[g] = marked(gloss[g], {renderer});
+      for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
 
       for (let file of this.files) {
         const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
