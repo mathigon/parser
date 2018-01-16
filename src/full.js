@@ -133,13 +133,12 @@ function blockAttributes(node) {
 
 function parseParagraph(text) {
   text = text
-    .replace(/\[\[([^\]]+)\]\]/g, function(x, body) {
+    .replace(/\[\[([^\]]+)]]/g, function(x, body) {
       if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
       return `<x-blank-input solution="${body}"></x-blank-input>`;
     })
-    .replace(/\[([\w\s\-]+)\]\(->([^\)]+)\)/g, '<x-target to="$2">$1</x-target>')  // Targets
-    .replace(/\$\{([^\}]+)\}\{([^\}]+)\}/g, '<x-var bind="$2">${$1}</x-var>')  // Variables
-    .replace(/\$\{([^\}]+)\}(?!\<\/x\-var\>)/g, '<span class="var">${$1}</span>')  // Variables
+    .replace(/\${([^}]+)}{([^}]+)}/g, '<x-var bind="$2">${$1}</x-var>')  // Variables
+    .replace(/\${([^}]+)}(?!<\/x-var>)/g, '<span class="var">${$1}</span>')  // Variables
     .replace(/(?:\^\^)(?=\S)(\S*)(?:\^\^)/g, '<sup>$1</sup>')  // Superscripts
     .replace(/(?:~~)(?=\S)(\S*)(?:~~)/g, '<sub>$1</sub>')  // Subscripts
     .replace(/(\w)'(\w)/g, '$1’$2');  // Single quotes
@@ -170,6 +169,11 @@ renderer.link = function(href, title, text) {
   if (href.startsWith('target:')) {
     let id = href.slice(7);
     return `<span class="step-target" data-to="${id}">${text}</span>`;
+  }
+
+  const href1 = entities.decode(href);
+  if (href1.startsWith('->')) {
+    return `<x-target to="${href1.slice(2)}">${text}</x-target>`;
   }
 
   return `<a href="${href}" target="_blank">${text}</a>`;

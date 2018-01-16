@@ -43,7 +43,7 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
 }
 
 // DEPRECATED Old chapters that have Pug rather than Markdown.
-function generateOld(grunt, src, dest, allBios) {
+function generateOld(grunt, src, dest, allBios, allGloss) {
   let content = fs.readFileSync(src + '/content.pug', 'utf8');
   let html = pug.render(content, {filename: src + '/content.pug'});
 
@@ -52,15 +52,21 @@ function generateOld(grunt, src, dest, allBios) {
     bios[b] = allBios[b];
   }
 
-  const hintsObj = {};
-  if (fs.existsSync(src + '/hints.yaml')) {
-    const hints = yaml.load(src + '/hints.yaml');
-    for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
+  let gloss = {};
+  for (let g of content.match(/gloss\(xid=['"]\w*['"]/g).map(g => g.slice(11, -1))) {
+    gloss[g] = allGloss[g];
   }
-  grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
+
+  const hints = {};
+  if (fs.existsSync(src + '/hints.yaml')) {
+    const hintsObj = yaml.load(src + '/hints.yaml');
+    for (let h of Object.keys(hintsObj)) hints[h] = marked(hintsObj[h], {renderer});
+  }
 
   grunt.file.write(dest + '/content.html', html);
+  grunt.file.write(dest + '/hints.json', JSON.stringify(hints));
   grunt.file.write(dest + '/bios.json', JSON.stringify(bios));
+  grunt.file.write(dest + '/glossary.json', JSON.stringify(gloss));
 }
 
 // -----------------------------------------------------------------------------
@@ -86,7 +92,7 @@ module.exports = function(grunt) {
         if (fs.existsSync(src + '/content.md')) {
           generate(grunt, src, dest, id, bios, gloss)
         } else {
-          generateOld(grunt, src, dest, bios);
+          generateOld(grunt, src, dest, bios, gloss);
         }
       }
     });
