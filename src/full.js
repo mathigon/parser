@@ -212,9 +212,13 @@ renderer.hr = function() {
   return previous ? '</x-step><x-step>' : '<x-step>';
 };
 
-// Indented Puh HTML blocks
+// Indented Pug HTML blocks
+// TODO Allow markdown inside html blocks, remove bio/gloss fixes.
 renderer.code = function(code) {
-  return pug.render(code, {filename: currentDirectory + '/content.pug'});
+  const html = pug.render(code, {filename: currentDirectory + '/content.pug'});
+  for (let g of html.match(/gloss xid="[\w-]*/g) || []) gloss.add(g.slice(11));
+  for (let b of html.match(/bio xid="[\w-]*/g) || []) gloss.add(b.slice(9));
+  return html;
 };
 
 // Parse markdown inside
@@ -262,6 +266,7 @@ module.exports.parseFull = function(id, content, path) {
 
   // Replace reveal goals
   content = content.replace(/when=/g, 'data-when=');
+  content = content.replace(/delay=/g, 'data-delay=');
 
   // Custom Markdown Extensions
   // TODO parse tables without headers
