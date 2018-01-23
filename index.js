@@ -53,7 +53,7 @@ function generateOld(grunt, src, dest, allBios, allGloss) {
   }
 
   let gloss = {};
-  for (let g of content.match(/gloss\(xid=['"]\w*['"]/g).map(g => g.slice(11, -1))) {
+  for (let g of content.match(/gloss\(xid=['"][\w-]*['"]/g).map(g => g.slice(11, -1))) {
     gloss[g] = allGloss[g];
   }
 
