@@ -267,6 +267,7 @@ module.exports.parseFull = function(id, content, path) {
   // Replace reveal goals
   content = content.replace(/when=/g, 'data-when=');
   content = content.replace(/delay=/g, 'data-delay=');
+  content = content.replace(/animation=/g, 'data-animation=');
 
   // Custom Markdown Extensions
   // TODO parse tables without headers
