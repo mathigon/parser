@@ -301,8 +301,12 @@ module.exports.parseFull = function(id, content, path) {
     $p.parentNode.classList.add(...classes);
   }
 
+  const steps = {};
+  for (let $s of doc.body.querySelectorAll('x-step'))
+    steps[$s.id] = $s.outerHTML;
 
   const html = minify(doc.body.innerHTML,
     {collapseWhitespace: true, conservativeCollapse: true});
-  return {html, bios, gloss, data};
+
+  return {html, bios, gloss, data, steps};
 };

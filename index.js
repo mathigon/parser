@@ -19,7 +19,7 @@ const {parseFull, renderer} = require('./src/full');
 function generate(grunt, src, dest, id, allBios, allGloss) {
   let content = fs.readFileSync(src + '/content.md', 'utf8');
 
-  let {html, bios, gloss, data} = parseFull(id, content, src);
+  let {html, bios, gloss, data, steps} = parseFull(id, content, src);
   grunt.file.write(dest + '/content.html', html);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
 
@@ -37,6 +37,10 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
     for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
   }
   grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
+
+  for (let s of Object.keys(steps)) {
+    grunt.file.write(dest + `/steps/${s}.html`, steps[s]);
+  }
 
   // let text = parseText(id, content);
   // grunt.file.write(dest + '/content.txt', text);
