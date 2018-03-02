@@ -289,7 +289,8 @@ module.exports.parseFull = function(id, content, path) {
   const $steps = doc.body.querySelectorAll('x-step');
   for (let i = 0; i < $steps.length; ++i) {
     let d = data.steps[i];
-    $steps[i].id = d.id || 'step-' + i;
+    if (!d.id) d.id = 'step-' + i;
+    $steps[i].id = d.id;
     if (d.goals) $steps[i].setAttribute('goals', d.goals);
     if (d.class) $steps[i].setAttribute('class', d.class);
   }
