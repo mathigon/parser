@@ -280,6 +280,15 @@ module.exports.parseFull = function(id, content, path) {
     if (d.class) $steps[i].setAttribute('class', d.class);
   }
 
+  // Calculate total goal count
+  // Some elements automatically generate goals (e.g. blanks).
+  // The last item in slideshows doesn't count, so we have to subtract those.
+  const autoElements = doc.querySelectorAll('x-blank, x-blank-input, .next-step, x-sortable, x-gameplay, x-slideshow .slide, x-slideshow .legend');
+  const slideshows = doc.querySelectorAll('x-slideshow');
+  data.goals = data.steps.reduce(
+    (p, s) => p + (s.goals ? s.goals.split(' ').length : 0),
+    autoElements.length - slideshows.length);
+
   // Generate HTML for individual steps
   const steps = {};
   for (let $s of doc.body.querySelectorAll('x-step'))
