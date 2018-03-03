@@ -4,6 +4,11 @@
 // =============================================================================
 
 
+// TODO Parse tables without headers
+// TODO Parse attributes for <ul> and <table>
+// TODO Use Mathigon's custom expression parsing instead of AsciiMath
+
+
 const yaml = require('yamljs');
 const marked = require('marked');
 const ascii2mathml = require('ascii2mathml');
@@ -13,15 +18,19 @@ const minify = require('html-minifier').minify;
 const emoji = require('node-emoji');
 const entities = require('html-entities').AllHtmlEntities;
 
+const minifyOptions = {
+  collapseWhitespace: true,
+  conservativeCollapse: true,
+  removeComments: true
+};
+
 let bios = new Set();
 let gloss = new Set();
 let data = {steps: []};
 let currentStep = null;
 let currentDirectory = null;
-
-// TODO Make this less hacky (don't parse paragraphs in blockquotes and HTML).
-let originalP = null;
-let isParsingHTML = false;
+let globalPug = '';  // Global Pug code at the beginning of chapters
+let originalP = null;  // Caching of unparsed paragraphs (for blockquotes)
 
 
 // -----------------------------------------------------------------------------
@@ -41,18 +50,6 @@ function nodes(element) {
   for (let c of element.children) {
     result.push(...nodes(c));
     result.push(c);
-  }
-  return result;
-}
-
-function textNodes(element) {
-  let result = [];
-  for (let c of element.childNodes) {
-    if (c.nodeType === 3) {
-      if (c.textContent.trim()) result.push(c);
-    } else {
-      result.push(...textNodes(c));
-    }
   }
   return result;
 }
@@ -102,7 +99,6 @@ function blockIndentation(source) {
       lines[i] = wrap[0] + '\n';
       nested.push('');
     }
-
   }
 
   return lines.join('\n');
@@ -137,12 +133,8 @@ function parseParagraph(text) {
       if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
       return `<x-blank-input solution="${body}"></x-blank-input>`;
     })
-    .replace(/\${([^}]+)}{([^}]+)}/g, '<x-var bind="$2">${$1}</x-var>')  // Variables
-    .replace(/\${([^}]+)}(?!<\/x-var>)/g, '<span class="var">${$1}</span>')  // Variables
-    .replace(/(?:\^\^)(?=\S)(\S*)(?:\^\^)/g, '<sup>$1</sup>')  // Superscripts
-    .replace(/(?:~~)(?=\S)(\S*)(?:~~)/g, '<sub>$1</sub>')  // Subscripts
-    .replace(/(\w)'(\w)/g, '$1’$2');  // Single quotes
-
+    .replace(/\${([^}]+)}{([^}]+)}/g, '<x-var bind="$2">${$1}</x-var>')
+    .replace(/\${([^}]+)}(?!<\/x-var>)/g, '<span class="var">${$1}</span>');
   return emoji.emojify(text, x => x, emojiImg);
 }
 
@@ -152,7 +144,6 @@ function parseParagraph(text) {
 
 const renderer = new marked.Renderer();
 
-// Glossary, bios and external links
 renderer.link = function(href, title, text) {
   if (href.startsWith('gloss:')) {
     let id = href.slice(6);
@@ -173,7 +164,7 @@ renderer.link = function(href, title, text) {
 
   const href1 = entities.decode(href);
   if (href1.startsWith('->')) {
-    return `<x-target to="${href1.slice(2)}">${text}</x-target>`;
+    return `<x-target to="${href1.slice(2).trim()}">${text}</x-target>`;
   }
 
   return `<a href="${href}" target="_blank">${text}</a>`;
@@ -194,9 +185,6 @@ renderer.codespan = function(code) {
     .replace(/lspace="0" rspace="0">′/g, '>′')
     .replace(/>(.)<\/mo>/g, (_, mo) =>  ` value="${mo}">${mo}</mo>`);
   return `<span class="math">${maths}</span>`;
-  // .replace(/<mrow>\s*<mo>\(<\/mo>/g, '<mfenced>')
-  // .replace(/<mo>\)<\/mo>\s*<\/mrow>/g, '</mfenced>');
-  // math = minify(math, { collapseWhitespace: true });
 };
 
 renderer.blockquote = function(quote) {
@@ -213,27 +201,12 @@ renderer.hr = function() {
 };
 
 // Indented Pug HTML blocks
-// TODO Allow markdown inside html blocks, remove bio/gloss fixes.
 renderer.code = function(code) {
-  const html = pug.render(code, {filename: currentDirectory + '/content.pug'});
-  for (let g of html.match(/gloss xid="[\w-]*/g) || []) gloss.add(g.slice(11));
-  for (let b of html.match(/bio xid="[\w-]*/g) || []) gloss.add(b.slice(9));
-  return html;
-};
-
-// Parse markdown inside
-renderer.html = function(html) {
-  const body = (new JSDom(html)).window.document.body;
-  const text = textNodes(body);
-
-  // Don't parse HTML if it doesn't contain text (e.g. just an open/close tag).
-  if (!text.length) return html;
-
-  isParsingHTML = true;
-  for (let t of text) t.textContent = marked(t.textContent, {renderer});
-  isParsingHTML = false;
-
-  return body.innerHTML.trim();
+  if (!currentStep) {
+    globalPug += code + '\n\n';
+    return '';
+  }
+  return pug.render(globalPug + code, {filename: currentDirectory + '/content.pug'});
 };
 
 renderer.listitem = function(text) {
@@ -242,7 +215,6 @@ renderer.listitem = function(text) {
 
 renderer.paragraph = function(text) {
   originalP = text;
-  if (isParsingHTML) return parseParagraph(text);
   return '<p>' + parseParagraph(text) + '</p>';
 };
 
@@ -251,29 +223,27 @@ renderer.paragraph = function(text) {
 // Run Markdown Parser
 
 module.exports.renderer = renderer;
+
 module.exports.parseFull = function(id, content, path) {
   bios = new Set();
   gloss = new Set();
   data = {steps: []};
   currentStep = null;
   currentDirectory = path;
+  globalPug = '';
 
-  // Image URLs
-  content = content
-    .replace(/url\(images\//g, `url(/resources/${id}/images/`)
-    .replace(/src="images\//g, `src="/resources/${id}/images/`)
-    .replace(/href="images\//g, `href="/resources/${id}/images/`);
+  // Replace relative image URLs
+  content = content.replace(/(url\(|src="|href="|background=")images\//g, `$1/resources/${id}/images/`);
 
-  // Replace reveal goals
+  // Rename special attributes
   content = content.replace(/when=/g, 'data-when=');
   content = content.replace(/delay=/g, 'data-delay=');
   content = content.replace(/animation=/g, 'data-animation=');
 
   // Custom Markdown Extensions
-  // TODO parse tables without headers
   content = blockIndentation(content);
 
-  // TODO fix consecutive HTML detection in marked.js
+  // Parse Markdown (but override HTML detection)
   const lexer = new marked.Lexer();
   lexer.rules.html = /^<.*[\n]{2,}/;
   const tokens = lexer.lex(content);
@@ -281,11 +251,26 @@ module.exports.parseFull = function(id, content, path) {
 
   const doc = (new JSDom(parsed + '</x-step>')).window.document;
 
-  // Parse element attributes
-  // TODO parse attributes for <ul> and <table>
+  // Parse custom element attributess
   for (let n of nodes(doc.body)) blockAttributes(n);
 
-  // Add step IDs
+  // Parse markdown inside HTML elements with .md class
+  const $md = doc.body.querySelectorAll('.md');
+  for (let i = 0; i < $md.length; ++i) {
+    $md[i].classList.remove('md');
+    $md[i].innerHTML = marked($md[i].innerHTML, {renderer})
+      .replace(/^<p>|<\/p>$/g, '');
+  }
+
+  // Add the [parent] attribute as class to all elements parents
+  const $parents = doc.body.querySelectorAll('[parent]');
+  for (let $p of $parents) {
+    const classes = $p.getAttribute('parent').split(' ');
+    $p.removeAttribute('parent');
+    $p.parentNode.classList.add(...classes);
+  }
+
+  // Add IDs, classes and goals for steps
   const $steps = doc.body.querySelectorAll('x-step');
   for (let i = 0; i < $steps.length; ++i) {
     let d = data.steps[i];
@@ -295,19 +280,13 @@ module.exports.parseFull = function(id, content, path) {
     if (d.class) $steps[i].setAttribute('class', d.class);
   }
 
-  const $parents = doc.body.querySelectorAll('[parent]');
-  for (let $p of $parents) {
-    const classes = $p.getAttribute('parent').split(' ');
-    $p.removeAttribute('parent');
-    $p.parentNode.classList.add(...classes);
-  }
-
+  // Generate HTML for individual steps
   const steps = {};
   for (let $s of doc.body.querySelectorAll('x-step'))
-    steps[$s.id] = $s.outerHTML;
+    steps[$s.id] = minify($s.outerHTML, minifyOptions);
 
-  const html = minify(doc.body.innerHTML,
-    {collapseWhitespace: true, conservativeCollapse: true});
+  // Generate HTML for the entire page
+  const html = minify(doc.body.innerHTML, minifyOptions);
 
   return {html, bios, gloss, data, steps};
 };
