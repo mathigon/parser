@@ -49,7 +49,7 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
 
 module.exports = function(grunt) {
   grunt.registerMultiTask('textbooks', 'Mathigon Markdown parser.', function() {
-    const options = this.options({root: '../textbooks/content'});
+    const options = this.options({root: 'content'});
     const root = path.join(process.cwd(), options.root);
 
     const bios = yaml.load(root + '/shared/bios.yaml');
