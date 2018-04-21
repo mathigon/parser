@@ -297,5 +297,8 @@ module.exports.parseFull = function(id, content, path) {
   // Generate HTML for the entire page
   const html = minify(doc.body.innerHTML, minifyOptions);
 
+  // Clean up description
+  data.description = (data.description || '').replace(/\n/g, ' ');
+
   return {html, bios, gloss, data, steps};
 };
