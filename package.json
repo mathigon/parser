@@ -20,7 +20,7 @@
     "html-entities": "^1.2.1",
     "html-minifier": "^3.5.15",
     "jsdom": "^11.8.0",
-    "marked": "^0.3.19",
+    "marked": "0.3.6",
     "node-emoji": "^1.8.1",
     "pug": "^2.0.3",
     "yamljs": "^0.3.0"
