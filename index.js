@@ -18,8 +18,7 @@ const {parseFull, renderer} = require('./src/full');
 function generate(grunt, src, dest, id, allBios, allGloss) {
   let content = fs.readFileSync(src + '/content.md', 'utf8');
 
-  let {html, bios, gloss, data, steps} = parseFull(id, content, src);
-  grunt.file.write(dest + '/content.html', html);
+  let {bios, gloss, data, stepsHTML, sectionsHTML} = parseFull(id, content, src);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
 
   let biosObj = {};
@@ -37,12 +36,13 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
   }
   grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
 
-  for (let s of Object.keys(steps)) {
-    grunt.file.write(dest + `/steps/${s}.html`, steps[s]);
+  for (let s of Object.keys(stepsHTML)) {
+    grunt.file.write(dest + `/steps/${s}.html`, stepsHTML[s]);
   }
 
-  // let text = parseText(id, content);
-  // grunt.file.write(dest + '/content.txt', text);
+  for (let s of Object.keys(sectionsHTML)) {
+    grunt.file.write(dest + `/sections/${s}.html`, sectionsHTML[s]);
+  }
 }
 
 // -----------------------------------------------------------------------------

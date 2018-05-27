@@ -24,11 +24,7 @@ const minifyOptions = {
   removeComments: true
 };
 
-let bios = new Set();
-let gloss = new Set();
-let data = {steps: []};
-let currentStep = null;
-let currentDirectory = null;
+let bios, gloss, steps, directory;
 let globalPug = '';  // Global Pug code at the beginning of chapters
 let originalP = null;  // Caching of unparsed paragraphs (for blockquotes)
 
@@ -171,11 +167,8 @@ renderer.link = function(href, title, text) {
 };
 
 renderer.heading = function (text, level) {
-  if (level === 1) {
-    data.title = text;
-    return '';
-  }
-  return `<h${level}>${text}</h${level}>`;
+  if (level === 1) return '';
+  return `<h${level-1}>${text}</h${level}>`;
 };
 
 renderer.codespan = function(code) {
@@ -188,25 +181,19 @@ renderer.codespan = function(code) {
 };
 
 renderer.blockquote = function(quote) {
-  const documentData = yaml.parse(originalP || quote);
-  Object.assign(currentStep || data, documentData);
+  Object.assign(last(steps), yaml.parse(originalP || quote));
   return '';
 };
 
 renderer.hr = function() {
-  let previous = currentStep;
-  currentStep = {};
-  data.steps.push(currentStep);
-  return previous ? '</x-step><x-step>' : '<x-step>';
+  steps.push({});
+  return '</x-step><x-step>';
 };
 
 // Indented Pug HTML blocks
 renderer.code = function(code) {
-  if (!currentStep) {
-    globalPug += code + '\n\n';
-    return '';
-  }
-  return pug.render(globalPug + code, {filename: currentDirectory + '/content.pug'});
+  if (code.indexOf('mixin ') >= 0) globalPug += code + '\n\n';
+  return pug.render(globalPug + code, {filename: directory + '/content.pug'});
 };
 
 renderer.listitem = function(text) {
@@ -227,18 +214,15 @@ module.exports.renderer = renderer;
 module.exports.parseFull = function(id, content, path) {
   bios = new Set();
   gloss = new Set();
-  data = {steps: []};
-  currentStep = null;
-  currentDirectory = path;
+  steps = [{}];
+  directory = path;
   globalPug = '';
 
   // Replace relative image URLs
   content = content.replace(/(url\(|src="|href="|background=")images\//g, `$1/resources/${id}/images/`);
 
   // Rename special attributes
-  content = content.replace(/when=/g, 'data-when=');
-  content = content.replace(/delay=/g, 'data-delay=');
-  content = content.replace(/animation=/g, 'data-animation=');
+  content = content.replace(/(when|delay|animation)=/g, 'data-$1=');
 
   // Custom Markdown Extensions
   content = blockIndentation(content);
@@ -249,7 +233,7 @@ module.exports.parseFull = function(id, content, path) {
   const tokens = lexer.lex(content);
   const parsed = marked.Parser.parse(tokens, {renderer});
 
-  const doc = (new JSDom(parsed + '</x-step>')).window.document;
+  const doc = (new JSDom('<x-step>' + parsed + '</x-step>')).window.document;
 
   // Parse custom element attributess
   for (let n of nodes(doc.body)) blockAttributes(n);
@@ -270,35 +254,43 @@ module.exports.parseFull = function(id, content, path) {
     $p.parentNode.classList.add(...classes);
   }
 
-  // Add IDs, classes and goals for steps
+  const sectionsHTML = {};
+  const stepsHTML = {};
+  const sections = [];
+  let goals = 0;
+
+  const autoGoals = 'x-blank, x-blank-input, .next-step, x-sortable, x-gameplay, x-slideshow .slide, x-slideshow .legend, x-picker .item:not([data-error])';
+
   const $steps = doc.body.querySelectorAll('x-step');
   for (let i = 0; i < $steps.length; ++i) {
-    let d = data.steps[i];
-    if (!d.id) d.id = 'step-' + i;
-    $steps[i].id = d.id;
-    if (d.goals) $steps[i].setAttribute('goals', d.goals);
-    if (d.class) $steps[i].setAttribute('class', d.class);
+    let step = steps[i];
+    if (!step.id) step.id = 'step-' + i;
+    $steps[i].id = step.id;
+    if (step.goals) $steps[i].setAttribute('goals', step.goals);
+    if (step.class) $steps[i].setAttribute('class', step.class);
+
+    const $h1 = $steps[i].querySelector('h1');
+    if ($h1) {
+      let sectionId = $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, '');
+      sections.push({title: $h1.textContent, id: sectionId, goals: 0});
+      sectionsHTML[sectionId] = '';
+      $h1.remove();
+    }
+
+    if (step.sectionBackground) last(sections).background = step.sectionBackground;
+
+    const html = minify($steps[i].outerHTML, minifyOptions);
+    stepsHTML[step.id] = html;
+    sectionsHTML[last(sections).id] += html;
+
+    // Some elements automatically generate goals (e.g. blanks).
+    // The last item in slideshows doesn't count, so we have to subtract those.
+    step.goals = (step.goals ? step.goals.split(' ').length : 0) +
+        $steps[i].querySelectorAll(autoGoals).length -
+        $steps[i].querySelectorAll('x-slideshow').length;
+    last(sections).goals += step.goals;
+    goals += step.goals;
   }
 
-  // Calculate total goal count
-  // Some elements automatically generate goals (e.g. blanks).
-  // The last item in slideshows doesn't count, so we have to subtract those.
-  const autoElements = doc.querySelectorAll('x-blank, x-blank-input, .next-step, x-sortable, x-gameplay, x-slideshow .slide, x-slideshow .legend');
-  const slideshows = doc.querySelectorAll('x-slideshow');
-  data.goals = data.steps.reduce(
-    (p, s) => p + (s.goals ? s.goals.split(' ').length : 0),
-    autoElements.length - slideshows.length);
-
-  // Generate HTML for individual steps
-  const steps = {};
-  for (let $s of doc.body.querySelectorAll('x-step'))
-    steps[$s.id] = minify($s.outerHTML, minifyOptions);
-
-  // Generate HTML for the entire page
-  const html = minify(doc.body.innerHTML, minifyOptions);
-
-  // Clean up description
-  data.description = (data.description || '').replace(/\n/g, ' ');
-
-  return {html, bios, gloss, data, steps};
+  return {bios, gloss, data: {sections, steps, goals}, stepsHTML, sectionsHTML};
 };
