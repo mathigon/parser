@@ -278,6 +278,7 @@ module.exports.parseFull = function(id, content, path) {
     }
 
     if (step.sectionBackground) last(sections).background = step.sectionBackground;
+    step.section = last(sections).id;
 
     const html = minify($steps[i].outerHTML, minifyOptions);
     stepsHTML[step.id] = html;
