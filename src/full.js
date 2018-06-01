@@ -271,7 +271,7 @@ module.exports.parseFull = function(id, content, path) {
 
     const $h1 = $steps[i].querySelector('h1');
     if ($h1) {
-      let sectionId = $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, '');
+      let sectionId = step.section || $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, '');
       sections.push({title: $h1.textContent, id: sectionId, goals: 0});
       sectionsHTML[sectionId] = '';
       $h1.remove();
