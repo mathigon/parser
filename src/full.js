@@ -24,7 +24,7 @@ const minifyOptions = {
   removeComments: true
 };
 
-let bios, gloss, steps, directory;
+let bios, gloss, steps, directory, title;
 let globalPug = '';  // Global Pug code at the beginning of chapters
 let originalP = null;  // Caching of unparsed paragraphs (for blockquotes)
 
@@ -167,7 +167,10 @@ renderer.link = function(href, title, text) {
 };
 
 renderer.heading = function (text, level) {
-  if (level === 1) return '';
+  if (level === 1) {
+    title = text;
+    return '';
+  }
   return `<h${level-1}>${text}</h${level}>`;
 };
 
@@ -216,7 +219,7 @@ module.exports.parseFull = function(id, content, path) {
   gloss = new Set();
   steps = [{}];
   directory = path;
-  globalPug = '';
+  globalPug = title = '';
 
   // Replace relative image URLs
   content = content.replace(/(url\(|src="|href="|background=")images\//g, `$1/resources/${id}/images/`);
@@ -293,5 +296,5 @@ module.exports.parseFull = function(id, content, path) {
     goals += step.goals;
   }
 
-  return {bios, gloss, data: {sections, steps, goals}, stepsHTML, sectionsHTML};
+  return {bios, gloss, data: {sections, steps, goals, title}, stepsHTML, sectionsHTML};
 };
