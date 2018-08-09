@@ -222,7 +222,7 @@ module.exports.parseFull = function(id, content, path) {
   globalPug = title = '';
 
   // Replace relative image URLs
-  content = content.replace(/(url\(|src="|href="|background=")images\//g, `$1/resources/${id}/images/`);
+  content = content.replace(/(url\(|src="|href="|background="|poster=")images\//g, `$1/resources/${id}/images/`);
 
   // Rename special attributes
   content = content.replace(/(when|delay|animation)=/g, 'data-$1=');
@@ -274,8 +274,9 @@ module.exports.parseFull = function(id, content, path) {
 
     const $h1 = $steps[i].querySelector('h1');
     if ($h1) {
-      let sectionId = step.section || $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, '');
-      sections.push({title: $h1.textContent, id: sectionId, goals: 0});
+      const sectionId = step.section || $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, '');
+      const sectionStatus = step.sectionStatus || '';
+      sections.push({title: $h1.textContent, id: sectionId, goals: 0, status: sectionStatus});
       sectionsHTML[sectionId] = '';
       $h1.remove();
     }
