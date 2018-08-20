@@ -262,7 +262,7 @@ module.exports.parseFull = function(id, content, path) {
   const sections = [];
   let goals = 0;
 
-  const autoGoals = 'x-blank, x-blank-input, .next-step, x-sortable, x-gameplay, x-slideshow .slide, x-slideshow .legend, x-picker .item:not([data-error])';
+  const autoGoals = 'x-blank, x-blank-input, x-equation, .next-step, x-sortable, x-gameplay, x-slideshow .slide, x-slideshow .legend, x-picker .item:not([data-error])';
 
   const $steps = doc.body.querySelectorAll('x-step');
   for (let i = 0; i < $steps.length; ++i) {
