@@ -22,11 +22,17 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
 
   let biosObj = {};
-  for (let b of bios) biosObj[b] = allBios[b];
+  for (let b of bios) {
+    if (!(b in allBios)) grunt.log.error('Missing bio: ' + b);
+    biosObj[b] = allBios[b];
+  }
   grunt.file.write(dest + '/bios.json', JSON.stringify(biosObj));
 
   let glossObj = {};
-  for (let g of gloss) glossObj[g] = allGloss[g];
+  for (let g of gloss) {
+    if (!(g in allGloss)) grunt.log.error('Missing glossary: ' + g);
+    glossObj[g] = allGloss[g];
+  }
   grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
 
   const hintsObj = {};
