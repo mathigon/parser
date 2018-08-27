@@ -114,7 +114,7 @@ function blockAttributes(node) {
 
   let replaced = div.children[0];
 
-  if (replaced.tagName === 'DIV') {
+  if (replaced.tagName === 'DIV' && !match[1].startsWith('div')) {
     const attributes = Array.from(replaced.attributes);
     for (let a of attributes) node.setAttribute(a.name, a.value);
   } else {
