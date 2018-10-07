@@ -204,6 +204,12 @@ renderer.listitem = function(text) {
   return '<li>' + parseParagraph(text) + '</li>';
 };
 
+renderer.tablecell = function(text, flags) {
+  const tag = flags.header ? 'th' : 'td';
+  const align = flags.align ? ` align="${flags.align}"` : '';
+  return `<${tag}${align}>${parseParagraph(text)}</${tag}>`;
+};
+
 renderer.paragraph = function(text) {
   originalP = text;
   return '<p>' + parseParagraph(text) + '</p>';
