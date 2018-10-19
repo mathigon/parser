@@ -15,8 +15,19 @@ const {parseFull, renderer} = require('./src/full');
 
 // -----------------------------------------------------------------------------
 
-function generate(grunt, src, dest, id, allBios, allGloss) {
-  let content = fs.readFileSync(src + '/content.md', 'utf8');
+function loadFile(src, name, locale) {
+  const localFile = name.replace('.', `_${locale}.`);
+  const localPath = path.join(src, 'translations', localFile);
+  if (fs.existsSync(localPath)) return fs.readFileSync(localPath, 'utf8');
+
+  const defaultPath = path.join(src, name);
+  if (fs.existsSync(defaultPath)) return fs.readFileSync(defaultPath, 'utf8');
+
+  return '';
+}
+
+function generate(grunt, src, dest, id, allBios, allGloss, locale) {
+  let content = loadFile(src, 'content.md', locale);
 
   let {bios, gloss, data, stepsHTML, sectionsHTML} = parseFull(id, content, src);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
@@ -36,10 +47,8 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
   grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
 
   const hintsObj = {};
-  if (fs.existsSync(src + '/hints.yaml')) {
-    const hints = yaml.load(src + '/hints.yaml');
-    for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
-  }
+  const hints = loadFile(src, 'hints.yaml', locale);
+  for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
   grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
 
   for (let s of Object.keys(stepsHTML)) {
@@ -55,20 +64,24 @@ function generate(grunt, src, dest, id, allBios, allGloss) {
 
 module.exports = function(grunt) {
   grunt.registerMultiTask('textbooks', 'Mathigon Markdown parser.', function() {
-    const options = this.options({root: 'content'});
+    const options = this.options({root: 'content', languages: ['en']});
     const root = path.join(process.cwd(), options.root);
 
-    const bios = yaml.load(root + '/shared/bios.yaml');
-    for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
+    for (let locale of options.languages) {
 
-    const gloss = yaml.load(root + '/shared/glossary.yaml');
-    for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
+      // TODO Translate glossary and bios
+      const bios = yaml.load(root + '/shared/bios.yaml');
+      for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
 
-    for (let file of this.files) {
-      const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
-      const src = path.join(process.cwd(), file.src[0]);
-      const dest = path.join(process.cwd(), file.dest);
-      generate(grunt, src, dest, id, bios, gloss)
+      const gloss = yaml.load(root + '/shared/glossary.yaml');
+      for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
+
+      for (let file of this.files) {
+        const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
+        const src = path.join(process.cwd(), file.src[0]);
+        const dest = path.join(process.cwd(), file.dest, locale);
+        generate(grunt, src, dest, id, bios, gloss, locale)
+      }
     }
   });
 };
