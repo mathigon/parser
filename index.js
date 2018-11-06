@@ -47,7 +47,7 @@ function generate(grunt, src, dest, id, allBios, allGloss, locale) {
   grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
 
   const hintsObj = {};
-  const hints = loadFile(src, 'hints.yaml', locale);
+  const hints = yaml.parse(loadFile(src, 'hints.yaml', locale) || '{}');
   for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
   grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
 
