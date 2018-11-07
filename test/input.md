@@ -13,7 +13,7 @@ as well as emoji: :smile: and :penguin:
 
 Here is a paragraph with [Biographies](bio:gauss) of [People](bio:euler),
 [Glossary entries](gloss:polygon), [External links](https://mathigon.org), and
-[Targets](-> #id .class).
+[Targets](->#id_.class).
 
 Here is a paragraph with [[blanks|gaps]] and [[100]] input, as well as
 variables like ${x|1|0,1,10}{x} and ${x}. You can also have _{span.class} blanks

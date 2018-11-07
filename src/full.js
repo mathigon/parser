@@ -161,7 +161,7 @@ renderer.link = function(href, title, text) {
 
   const href1 = entities.decode(href);
   if (href1.startsWith('->')) {
-    return `<x-target to="${href1.slice(2).trim()}">${text}</x-target>`;
+    return `<x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target>`;
   }
 
   return `<a href="${href}" target="_blank">${text}</a>`;
