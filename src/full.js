@@ -237,6 +237,14 @@ module.exports.parseFull = function(id, content, path) {
   // Custom Markdown Extensions
   content = blockIndentation(content);
 
+  // Add headers to tables without header
+  content = content.replace(/\n\n\|(.*)\n\|(.*)\n/g, (m, row1, row2) => {
+    const cols = row1.split(' | ').length;
+    const header = row2.match(/^[\s|:-]+$/) ? ''
+        : `|${' |'.repeat(cols)}\n|${' - |'.repeat(cols)}\n`;
+    return `\n\n${header}|${row1}\n|${row2}\n`
+  });
+
   // Parse Markdown (but override HTML detection)
   const lexer = new marked.Lexer();
   lexer.rules.html = /^<.*[\n]{2,}/;
@@ -262,6 +270,20 @@ module.exports.parseFull = function(id, content, path) {
     const classes = $p.getAttribute('parent').split(' ');
     $p.removeAttribute('parent');
     $p.parentNode.classList.add(...classes);
+  }
+
+  // Remove empty table headers
+  for (let $th of doc.body.querySelectorAll('thead')) {
+    if (!$th.textContent.trim()) $th.remove();
+  }
+
+  // Allow setting a class attribute in the last row of a table
+  for (let $td of doc.body.querySelectorAll('td[class]')) {
+    if (!$td.parentElement.textContent.trim()) {
+      const $table = $td.parentElement.parentElement.parentElement;
+      $table.setAttribute('class', $td.getAttribute('class'));
+      $td.parentElement.remove();
+    }
   }
 
   const sectionsHTML = {};
