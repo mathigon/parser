@@ -15,4 +15,5 @@ const dir = path.join(process.cwd(), 'test');
 const source = fs.readFileSync(dir + '/input.md', 'utf8');
 const output = parseFull('test', source, dir);
 
-fs.writeFileSync(dir + '/output.html', output.html);
+const html = output.data.steps.map(s => output.stepsHTML[s.id]).join('\n\n');
+fs.writeFileSync(dir + '/output.html', html);
