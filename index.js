@@ -6,6 +6,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const marked = require('marked');
 const yaml = require('yamljs');
 
@@ -26,8 +27,16 @@ function loadFile(src, name, locale) {
   return '';
 }
 
-function generate(grunt, src, dest, id, allBios, allGloss, locale) {
+function generate(grunt, src, dest, id, allBios, allGloss, locale, cache) {
   let content = loadFile(src, 'content.md', locale);
+
+  // Only parse files that changed.
+  if (cache) {
+    const hash = crypto.createHash('md5').update(content).digest('hex');
+    if (cache[id + '-' + locale] === hash) return;
+    cache[id + '-' + locale] = hash;
+    console.log(`>> Parsing ${id} / ${locale}`);
+  }
 
   let {bios, gloss, data, stepsHTML, sectionsHTML} = parseFull(id, content, src);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
@@ -64,8 +73,11 @@ function generate(grunt, src, dest, id, allBios, allGloss, locale) {
 
 module.exports = function(grunt) {
   grunt.registerMultiTask('textbooks', 'Mathigon Markdown parser.', function() {
-    const options = this.options({root: 'content', languages: ['en']});
+    const options = this.options({root: 'content', languages: ['en'], cache: false});
     const root = path.join(process.cwd(), options.root);
+
+    const cacheFile = path.join(process.cwd(), this.files[0].dest, '../cache.json');
+    const cache = options.cache ? (grunt.file.exists(cacheFile) ? grunt.file.readJSON(cacheFile) : {}) : null;
 
     for (let locale of options.languages) {
 
@@ -80,8 +92,10 @@ module.exports = function(grunt) {
         const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
         const src = path.join(process.cwd(), file.src[0]);
         const dest = path.join(process.cwd(), file.dest, locale);
-        generate(grunt, src, dest, id, bios, gloss, locale)
+        generate(grunt, src, dest, id, bios, gloss, locale, cache)
       }
     }
+
+    if (options.cache) grunt.file.write(cacheFile, JSON.stringify(cache));
   });
 };
