@@ -27,7 +27,7 @@ function loadFile(src, name, locale) {
   return '';
 }
 
-function generate(grunt, src, dest, id, allBios, allGloss, locale, cache) {
+function generate(grunt, src, dest, id, allBios, allGloss, sharedHints, locale, cache) {
   let content = loadFile(src, 'content.md', locale);
 
   // Only parse files that changed.
@@ -58,6 +58,7 @@ function generate(grunt, src, dest, id, allBios, allGloss, locale, cache) {
   const hintsObj = {};
   const hints = yaml.parse(loadFile(src, 'hints.yaml', locale) || '{}');
   for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
+  Object.assign(hintsObj, sharedHints);
   grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
 
   for (let s of Object.keys(stepsHTML)) {
@@ -81,18 +82,26 @@ module.exports = function(grunt) {
 
     for (let locale of options.languages) {
 
-      // TODO Translate glossary and bios
-      const bios = yaml.load(root + '/shared/bios.yaml');
+      const bios = yaml.parse(loadFile(root + '/shared', 'bios.yaml', locale));
       for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
 
-      const gloss = yaml.load(root + '/shared/glossary.yaml');
+      const gloss = yaml.parse(loadFile(root + '/shared', 'glossary.yaml', locale));
       for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
+
+      const hints = yaml.parse(loadFile(root + '/shared', 'hints.yaml', locale));
+      for (let h of Object.keys(hints)) {
+        if (Array.isArray(hints[h])) {
+          hints[h] = hints[h].map(h => marked(h, {renderer}));
+        } else {
+          hints[h] = marked(hints[h], {renderer});
+        }
+      }
 
       for (let file of this.files) {
         const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
         const src = path.join(process.cwd(), file.src[0]);
         const dest = path.join(process.cwd(), file.dest, locale);
-        generate(grunt, src, dest, id, bios, gloss, locale, cache)
+        generate(grunt, src, dest, id, bios, gloss, hints, locale, cache)
       }
     }
 
