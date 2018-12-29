@@ -219,8 +219,6 @@ renderer.paragraph = function(text) {
 // -----------------------------------------------------------------------------
 // Run Markdown Parser
 
-module.exports.renderer = renderer;
-
 module.exports.parseFull = function(id, content, path) {
   bios = new Set();
   gloss = new Set();
@@ -327,4 +325,11 @@ module.exports.parseFull = function(id, content, path) {
   }
 
   return {bios, gloss, data: {sections, steps, goals, title}, stepsHTML, sectionsHTML};
+};
+
+module.exports.parseSimple = function(text) {
+  const md = marked(text, {renderer});
+  const doc = (new JSDom(md)).window.document;
+  for (let n of nodes(doc.body)) blockAttributes(n);
+  return minify(doc.body.innerHTML, minifyOptions);
 };

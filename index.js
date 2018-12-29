@@ -7,10 +7,9 @@
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const marked = require('marked');
 const yaml = require('yamljs');
 
-const {parseFull, renderer} = require('./src/full');
+const {parseFull, parseSimple} = require('./src/full');
 // const parseText = require('./src/text');
 
 
@@ -57,7 +56,7 @@ function generate(grunt, src, dest, id, allBios, allGloss, sharedHints, locale, 
 
   const hintsObj = {};
   const hints = yaml.parse(loadFile(src, 'hints.yaml', locale) || '{}');
-  for (let h of Object.keys(hints)) hintsObj[h] = marked(hints[h], {renderer});
+  for (let h of Object.keys(hints)) hintsObj[h] = parseSimple(hints[h]);
   Object.assign(hintsObj, sharedHints);
   grunt.file.write(dest + '/hints.json', JSON.stringify(hintsObj));
 
@@ -83,17 +82,17 @@ module.exports = function(grunt) {
     for (let locale of options.languages) {
 
       const bios = yaml.parse(loadFile(root + '/shared', 'bios.yaml', locale));
-      for (let b of Object.keys(bios)) bios[b].bio = marked(bios[b].bio, {renderer});
+      for (let b of Object.keys(bios)) bios[b].bio = parseSimple(bios[b].bio);
 
       const gloss = yaml.parse(loadFile(root + '/shared', 'glossary.yaml', locale));
-      for (let g of Object.keys(gloss)) gloss[g].text = marked(gloss[g].text, {renderer});
+      for (let g of Object.keys(gloss)) gloss[g].text = parseSimple(gloss[g].text);
 
       const hints = yaml.parse(loadFile(root + '/shared', 'hints.yaml', locale));
       for (let h of Object.keys(hints)) {
         if (Array.isArray(hints[h])) {
-          hints[h] = hints[h].map(h => marked(h, {renderer}));
+          hints[h] = hints[h].map(h => parseSimple(h));
         } else {
-          hints[h] = marked(hints[h], {renderer});
+          hints[h] = parseSimple(hints[h]);
         }
       }
 
