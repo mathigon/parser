@@ -15,6 +15,7 @@
   "main": "index.js",
   "repository": "mathigon/parser",
   "dependencies": {
+    "@mathigon/hilbert": "^0.1.0",
     "ascii2mathml": "^0.5.4",
     "grunt": "^1.0.3",
     "html-entities": "^1.2.1",
