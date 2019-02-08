@@ -232,6 +232,9 @@ module.exports.parseFull = function(id, content, path) {
   // Rename special attributes
   content = content.replace(/(when|delay|animation)=/g, 'data-$1=');
 
+  // Replace non-breaking space
+  content = content.replace(/\\\s/g, '&nbsp;');
+
   // Custom Markdown Extensions
   content = blockIndentation(content);
 
