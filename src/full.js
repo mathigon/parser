@@ -127,10 +127,10 @@ function parseParagraph(text) {
   text = text
     .replace(/\[\[([^\]]+)]]/g, function(x, body) {
       body = body.replace(/"/g, '&quot;');
-      if (body.split('|').length > 1) return `<x-blank choices="${body}"></x-blank>`;
-      return `<x-blank-input solution="${body}"></x-blank-input>`;
+      if (body.split('|').length > 1) return `<span class="nowrap"><x-blank choices="${body}"></x-blank></span>`;
+      return `<span class="nowrap"><x-blank-input solution="${body}"></x-blank-input></span>`;
     })
-    .replace(/\${([^}]+)}{([^}]+)}/g, '<x-var bind="$2">${$1}</x-var>')
+    .replace(/\${([^}]+)}{([^}]+)}/g, '<span class="nowrap"><x-var bind="$2">${$1}</x-var></span>')
     .replace(/\${([^}]+)}(?!<\/x-var>)/g, '<span class="var">${$1}</span>');
   return emoji.emojify(text, x => x, emojiImg);
 }
@@ -142,16 +142,19 @@ function parseParagraph(text) {
 const renderer = new marked.Renderer();
 
 renderer.link = function(href, title, text) {
+  // Note: The .nowrap elements prevent line breaks between inline-block
+  // elements and punctuation.
+
   if (href.startsWith('gloss:')) {
     let id = href.slice(6);
     gloss.add(id);
-    return `<x-gloss xid="${id}">${text}</x-gloss>`;
+    return `<span class="nowrap"><x-gloss xid="${id}">${text}</x-gloss></span>`;
   }
 
   if (href.startsWith('bio:')) {
     let id = href.slice(4);
     bios.add(id);
-    return `<x-bio xid="${id}">${text}</x-bio>`;
+    return `<span class="nowrap"><x-bio xid="${id}">${text}</x-bio></span>`;
   }
 
   if (href.startsWith('target:')) {
@@ -161,7 +164,7 @@ renderer.link = function(href, title, text) {
 
   const href1 = entities.decode(href);
   if (href1.startsWith('->')) {
-    return `<x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target>`;
+    return `<span class="nowrap"><x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target></span>`;
   }
 
   return `<a href="${href}" target="_blank">${text}</a>`;
