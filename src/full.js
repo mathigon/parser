@@ -17,6 +17,7 @@ const JSDom = require('jsdom').JSDOM;
 const minify = require('html-minifier').minify;
 const emoji = require('node-emoji');
 const entities = require('html-entities').AllHtmlEntities;
+const Expression = require('@mathigon/hilbert').Expression;
 
 const minifyOptions = {
   collapseWhitespace: true,
@@ -179,11 +180,24 @@ renderer.heading = function (text, level) {
 };
 
 renderer.codespan = function(code) {
-  let maths = ascii2mathml(entities.decode(code), {bare: true});
-  maths = maths.replace(/<mo>-<\/mo>/g, '<mo>−</mo>')
-    .replace(/\s*accent="true"/g, '')
-    .replace(/lspace="0" rspace="0">′/g, '>′')
-    .replace(/>(.)<\/mo>/g, (_, mo) =>  ` value="${mo}">${mo}</mo>`);
+  code = entities.decode(code);
+
+  // TODO Make native expression parsing the default, remove § prefix.
+  if (code[0] === '§') {
+    const expr = Expression.parse(code.slice(1));
+    const maths = expr.toMathML({
+      pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
+      input: (value) => `<x-blank-input solution="${value.val.n}"></x-blank-input>`,
+      blank: (...values) => `<x-blank choices="${values.join('|')}"></x-blank>`
+  });
+    return `<span class="math">${maths}</span>`;
+  }
+
+  const maths = ascii2mathml(code, {bare: true})
+      .replace(/<mo>-<\/mo>/g, '<mo>−</mo>')
+      .replace(/\s*accent="true"/g, '')
+      .replace(/lspace="0" rspace="0">′/g, '>′')
+      .replace(/>(.)<\/mo>/g, (_, mo) =>  ` value="${mo}">${mo}</mo>`);
   return `<span class="math">${maths}</span>`;
 };
 
