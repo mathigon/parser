@@ -247,7 +247,7 @@ module.exports.parseFull = function(id, content, path) {
   content = content.replace(/(url\(|src="|href="|background="|poster=")images\//g, `$1/resources/${id}/images/`);
 
   // Rename special attributes
-  content = content.replace(/(when|delay|animation)=/g, 'data-$1=');
+  content = content.replace(/(when|delay|animation|duration)=/g, 'data-$1=');
 
   // Replace non-breaking space
   content = content.replace(/\\\s/g, '&nbsp;');
