@@ -117,7 +117,13 @@ function blockAttributes(node) {
 
   if (replaced.tagName === 'DIV' && !match[1].startsWith('div')) {
     const attributes = Array.from(replaced.attributes);
-    for (let a of attributes) node.setAttribute(a.name, a.value);
+    for (let a of attributes) {
+      if (a.name === 'class') {
+        node.classList.add(...a.value.split(' '));
+      } else {
+        node.setAttribute(a.name, a.value);
+      }
+    }
   } else {
     while (node.firstChild) replaced.appendChild(node.firstChild);
     node.parentNode.replaceChild(replaced, node);
@@ -146,6 +152,10 @@ renderer.link = function(href, title, text) {
   // Note: The .nowrap elements prevent line breaks between inline-block
   // elements and punctuation.
 
+  if (href === 'btn:next') {
+    return `<button class="next-step">${text}</button>`;
+  }
+
   if (href.startsWith('gloss:')) {
     let id = href.slice(6);
     gloss.add(id);
@@ -161,6 +171,11 @@ renderer.link = function(href, title, text) {
   if (href.startsWith('target:')) {
     let id = href.slice(7);
     return `<span class="step-target" data-to="${id}">${text}</span>`;
+  }
+
+  if (href.startsWith('pill:')) {
+    let id = href.slice(5);
+    return `<strong class="pill step-target" data-to="${id}">${text}</strong>`;
   }
 
   const href1 = entities.decode(href);
@@ -188,7 +203,8 @@ renderer.codespan = function(code) {
     const maths = expr.toMathML({
       pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
       input: (value) => `<x-blank-input solution="${value.val.n}"></x-blank-input>`,
-      blank: (...values) => `<x-blank choices="${values.join('|')}"></x-blank>`
+      blank: (...values) => `<x-blank choices="${values.join('|')}"></x-blank>`,
+      arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`
   });
     return `<span class="math">${maths}</span>`;
   }
