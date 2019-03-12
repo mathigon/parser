@@ -178,6 +178,10 @@ renderer.link = function(href, title, text) {
     return `<strong class="pill step-target" data-to="${id}">${text}</strong>`;
   }
 
+  if (href === 'pill') {
+    return `<strong class="pill">${text}</strong>`;
+  }
+
   const href1 = entities.decode(href);
   if (href1.startsWith('->')) {
     return `<span class="nowrap"><x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target></span>`;
