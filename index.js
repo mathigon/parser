@@ -121,3 +121,6 @@ module.exports = function(grunt) {
     if (options.cache) grunt.file.write(cacheFile, JSON.stringify(cache));
   });
 };
+
+module.exports.parseFull = parseFull;
+module.exports.parseSimple = parseSimple;
