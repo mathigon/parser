@@ -201,15 +201,18 @@ renderer.heading = function (text, level) {
 renderer.codespan = function(code) {
   code = entities.decode(code);
 
-  // TODO Make native expression parsing the default, remove § prefix.
-  if (code[0] === '§') {
+  if (code[0] === '[' && code[code.length - 1] === ']') {
+    return `<code>${code.slice(1, code.length - 1)}</code>`;
+
+  } else if (code[0] === '§') {
+    // TODO Make native expression parsing the default, remove § prefix.
     const expr = Expression.parse(code.slice(1));
     const maths = expr.toMathML({
       pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
       input: (value) => `<x-blank-input solution="${value.val.n}"></x-blank-input>`,
       blank: (...values) => `<x-blank choices="${values.join('|')}"></x-blank>`,
       arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`
-  });
+    });
     return `<span class="math">${maths}</span>`;
   }
 
@@ -232,7 +235,11 @@ renderer.hr = function() {
 };
 
 // Indented Pug HTML blocks
-renderer.code = function(code) {
+renderer.code = function(code, name) {
+  if (name) {
+    return `<pre><code>${code}</code></pre>`;
+  }
+
   if (code.indexOf('mixin ') >= 0) globalPug += code + '\n\n';
   return pug.render(globalPug + code, {filename: directory + '/content.pug'});
 };
