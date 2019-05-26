@@ -195,7 +195,7 @@ renderer.heading = function (text, level) {
     title = text;
     return '';
   }
-  return `<h${level-1}>${text}</h${level}>`;
+  return `<h${level-1}>${text}</h${level-1}>`;
 };
 
 renderer.codespan = function(code) {
