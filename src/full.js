@@ -201,10 +201,11 @@ renderer.heading = function (text, level) {
 renderer.codespan = function(code) {
   code = entities.decode(code);
 
-  if (code[0] === '[' && code[code.length - 1] === ']') {
-    return `<code>${code.slice(1, code.length - 1)}</code>`;
+  if (code.startsWith('[py]')) {
+    code = code.slice(4).trim();
+    return `<code class="language-python">${code}</code>`
 
-  } else if (code[0] === '§') {
+  } else if (code.startsWith('§')) {
     // TODO Make native expression parsing the default, remove § prefix.
     const expr = Expression.parse(code.slice(1));
     const maths = expr.toMathML({
@@ -234,14 +235,18 @@ renderer.hr = function() {
   return '</x-step><x-step>';
 };
 
-// Indented Pug HTML blocks
 renderer.code = function(code, name) {
-  if (name) {
-    return `<pre><code>${code}</code></pre>`;
+  if (name === 'latex') {
+    code = entities.decode(code);
+    return `<p>\\begin{equation*}${code}\\end{equation*}</p>`;
+  } else if (name) {
+    code = entities.decode(code);
+    return `<pre class="language-${name}"><code>${code}</code></pre>`;
+  } else {
+    // Indented Pug HTML blocks
+    if (code.indexOf('mixin ') >= 0) globalPug += code + '\n\n';
+    return pug.render(globalPug + code, {filename: directory + '/content.pug'});
   }
-
-  if (code.indexOf('mixin ') >= 0) globalPug += code + '\n\n';
-  return pug.render(globalPug + code, {filename: directory + '/content.pug'});
 };
 
 renderer.listitem = function(text) {
