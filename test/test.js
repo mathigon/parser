@@ -7,13 +7,19 @@
 
 const fs = require('fs');
 const path = require('path');
-const {parseFull} = require('../src/full');
+const {parse} = require('../src/parser');
 
 
-const dir = path.join(process.cwd(), 'test');
+async function run() {
+  const dir = path.join(process.cwd(), 'test');
 
-const source = fs.readFileSync(dir + '/input.md', 'utf8');
-const output = parseFull('test', source, dir);
+  const source = fs.readFileSync(dir + '/input.md', 'utf8');
+  const output = await parse('test', source, dir);
 
-const html = output.data.steps.map(s => output.stepsHTML[s.id]).join('\n\n');
-fs.writeFileSync(dir + '/output.html', html);
+  const html = output.data.steps.map(s => output.stepsHTML[s.id]).join('\n\n');
+  fs.writeFileSync(dir + '/output.html', html);
+
+  process.exit();
+}
+
+run();

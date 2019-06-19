@@ -16,9 +16,21 @@ inside [[a|b|c]] tags_.
 
 Here is a paragraph with maths: `x^2 + 4x - 20/2`.
 
-{.red-wrap(data-value=10)} Here is a paragraph with classes: _red_{.red}
+{.red-wrap(data-value=10)} Here is a paragraph with classes: _{.red} red_
 
-Here is a special _inline element_{small}
+Here is a special _{small} inline element_
+
+---
+
+A **matrix** is a rectangular array of numbers: 
+
+Escape 20\$ and \$20 and 20\ m.
+
+Here is $x$ equation.
+
+``` latex
+x
+```
 
 ---
 

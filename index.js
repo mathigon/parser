@@ -9,8 +9,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const yaml = require('yamljs');
 
-const {parseFull, parseSimple} = require('./src/full');
-// const parseText = require('./src/text');
+const {parse, parseSimple} = require('./src/parser');
 
 
 // -----------------------------------------------------------------------------
@@ -21,20 +20,20 @@ function loadFile(root, name, locale) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 }
 
-function loadYAML(path, name, textField = null, locale = 'en', fallback = {}) {
+async function loadYAML(path, name, textField = null, locale = 'en', fallback = {}) {
   const text = loadFile(path, name, locale);
   const data = text ? yaml.parse(text) || {} : {};
 
   for (let d of Object.keys(data)) {
     if (textField) {
       // Used for bios and glossary.
-      data[d][textField] = parseSimple(data[d][textField]);
+      data[d][textField] = await parseSimple(data[d][textField]);
     } else if (Array.isArray(data[d])) {
       // Used for hint arrays
-      data[d] = data[d].map(x => parseSimple(x));
+      data[d] = await Promise.all(data[d].map(x => parseSimple(x)));
     } else {
       // Used for individual hints.
-      data[d] = parseSimple(data[d]);
+      data[d] = await parseSimple(data[d]);
     }
   }
 
@@ -47,8 +46,8 @@ function loadYAML(path, name, textField = null, locale = 'en', fallback = {}) {
 
 // -----------------------------------------------------------------------------
 
-function generate(grunt, content, src, dest, id, allBios, allGloss, sharedHints, locale) {
-  let {bios, gloss, data, stepsHTML, sectionsHTML} = parseFull(id, content, src);
+async function generate(grunt, content, src, dest, id, allBios, allGloss, sharedHints, locale) {
+  let {bios, gloss, data, stepsHTML, sectionsHTML} = await parse(id, content, src);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
 
   let biosObj = {};
@@ -66,7 +65,7 @@ function generate(grunt, content, src, dest, id, allBios, allGloss, sharedHints,
   grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
 
   // TODO Fall back to the English hints if missing!
-  const hints = loadYAML(src, 'hints.yaml', null, locale, sharedHints);
+  const hints = await loadYAML(src, 'hints.yaml', null, locale, sharedHints);
   grunt.file.write(dest + '/hints.json', JSON.stringify(hints));
 
   for (let s of Object.keys(stepsHTML)) {
@@ -81,8 +80,9 @@ function generate(grunt, content, src, dest, id, allBios, allGloss, sharedHints,
 // -----------------------------------------------------------------------------
 
 module.exports = function(grunt) {
-  grunt.registerMultiTask('textbooks', 'Mathigon Markdown parser.', function() {
+  grunt.registerMultiTask('textbooks', 'Mathigon Markdown parser.', async function() {
     const options = this.options({root: 'content', languages: ['en'], cache: false});
+    const done = this.async();
 
     const root = path.join(process.cwd(), options.root);
     const shared = root + '/shared';
@@ -90,14 +90,14 @@ module.exports = function(grunt) {
     const cacheFile = path.join(process.cwd(), this.files[0].dest, '../cache.json');
     const cache = grunt.file.exists(cacheFile) ? grunt.file.readJSON(cacheFile) : {};
 
-    const bios = loadYAML(shared, 'bios.yaml', 'bio');
-    const gloss = loadYAML(shared, 'glossary.yaml', 'text');
-    const hints = loadYAML(shared, 'hints.yaml');
+    const bios = await loadYAML(shared, 'bios.yaml', 'bio');
+    const gloss = await loadYAML(shared, 'glossary.yaml', 'text');
+    const hints = await loadYAML(shared, 'hints.yaml');
 
     for (let locale of options.languages) {
-      const localBios = loadYAML(shared, 'bios.yaml', 'bio', locale, bios);
-      const localGloss = loadYAML(shared, 'glossary.yaml', 'text', locale, gloss);
-      const localHints = loadYAML(shared, 'hints.yaml', null, locale, hints);
+      const localBios = await loadYAML(shared, 'bios.yaml', 'bio', locale, bios);
+      const localGloss = await loadYAML(shared, 'glossary.yaml', 'text', locale, gloss);
+      const localHints = await loadYAML(shared, 'hints.yaml', null, locale, hints);
 
       for (let file of this.files) {
         const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
@@ -114,13 +114,14 @@ module.exports = function(grunt) {
           console.log(`>> Parsing ${id} / ${locale}`);
         }
 
-        generate(grunt, content, src, dest, id, localBios, localGloss, localHints, locale)
+        await generate(grunt, content, src, dest, id, localBios, localGloss, localHints, locale)
       }
     }
 
     if (options.cache) grunt.file.write(cacheFile, JSON.stringify(cache));
+    done();
   });
 };
 
-module.exports.parseFull = parseFull;
+module.exports.parseFull = parse;
 module.exports.parseSimple = parseSimple;
