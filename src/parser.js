@@ -286,6 +286,18 @@ renderer.codespan = function (code) {
     code = code.slice(4).trim();
     return `<code class="language-python">${code}</code>`
 
+  } else if (code.startsWith('{jl}')) {
+    code = code.slice(4).trim();
+    return `<code class="language-julia">${code}</code>`
+
+  } else if (code.startsWith('{r}')) {
+    code = code.slice(3).trim();
+    return `<code class="language-r">${code}</code>`
+
+  } else if (code.startsWith('{code}')) {
+    code = code.slice(6).trim();
+    return `<code class="language-markup">${code}</code>`
+
   } else if (code.startsWith('§')) {
     // TODO Make native expression parsing the default, remove § prefix.
     const expr = Expression.parse(code.slice(1));
