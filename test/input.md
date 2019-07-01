@@ -32,6 +32,8 @@ Here is $x$ equation.
 x
 ```
 
+Here are some `{py}code` blocs with `{r} custom `  with `{code} format `.
+
 ---
 
 Here is another section

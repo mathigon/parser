@@ -240,6 +240,15 @@ function parseParagraph(text) {
 // -----------------------------------------------------------------------------
 // Marked JS Renderer
 
+const codeBlocks = {
+  py: 'language-python',
+  js: 'language-js',
+  c: 'language-clike',
+  jl: 'language-julia',
+  r: 'language-r',
+  code: 'language-markup'
+};
+
 renderer.link = function (href, title, text) {
   if (href === 'btn:next') {
     return `<button class="next-step">${text}</button>`;
@@ -282,12 +291,15 @@ renderer.link = function (href, title, text) {
 renderer.codespan = function (code) {
   code = entities.decode(code);
 
-  if (code.startsWith('{py}')) {
-    code = code.slice(4).trim();
-    return `<code class="language-python">${code}</code>`
+  for (let key of Object.keys(codeBlocks)) {
+    if (code.startsWith(`{${key}}`)) {
+      code = code.slice(key.length + 2).trim();
+      return `<code class="${codeBlocks[key]}">${code}</code>`
+    }
+  }
 
-  } else if (code.startsWith('§')) {
-    // TODO Make native expression parsing the default, remove § prefix.
+  // TODO Make native expression parsing the default, remove § prefix.
+  if (code.startsWith('§')) {
     const expr = Expression.parse(code.slice(1));
     const maths = expr.toMathML({
       pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
@@ -332,6 +344,7 @@ renderer.code = function(code, name) {
 
   if (name) {
     code = entities.decode(code);
+    name = codeBlocks[name] || name;
     return `<pre class="language-${name}"><code>${code}</code></pre>`;
   }
 
