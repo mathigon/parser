@@ -92,6 +92,9 @@ module.exports.parse = async function(id, content, path) {
   // TODO Parse attributes for <ul> and <table>
   for (let n of nodes(doc)) blockAttributes(n);
 
+  // Add <nowrap> elements around inline-block elements.
+  lineBreaks(doc);
+
   // Parse markdown inside HTML elements with .md class
   const $md = doc.querySelectorAll('.md');
   for (let i = 0; i < $md.length; ++i) {
@@ -139,6 +142,7 @@ module.exports.parseSimple = async function (text) {
   result = await fillTexPlaceholders(result);
   const doc = (new JSDom(result)).window.document.body;
   for (let n of nodes(doc)) blockAttributes(n);
+  lineBreaks(doc);
   return minify(doc.innerHTML, minifyOptions);
 };
 
@@ -193,20 +197,15 @@ function extractSectionData(doc) {
 // -----------------------------------------------------------------------------
 // Custom Paragraph Renderer
 
-function nowrap(str) {
-  // This prevents line breaks between inline-block elements and punctuation.
-  return `<span class="nowrap">${str}</span>`;
-}
-
 function inlineBlanks(text) {
   return text.replace(/\[\[([^\]]+)]]/g, (x, body) => {
     const choices = body.split('|');
 
     if (choices.length === 1)
-      return nowrap(`<x-blank-input solution="${body}"></x-blank-input>`);
+      return `<x-blank-input solution="${body}"></x-blank-input>`;
 
     const choiceEls = choices.map(c => `<span class="choice">${c}</span>`);
-    return nowrap(`<x-blank>${choiceEls.join('')}</x-blank>`);
+    return `<x-blank>${choiceEls.join('')}</x-blank>`;
   });
 }
 
@@ -214,12 +213,12 @@ function inlineEquations(text) {
   // We want to match $a$ strings, except when they are prefixed with a \$
   // e.g. for currencies, or when they start with ${} (for variables).
   return text.replace(/(^|[^\\])\$([^{][^$]*?)\$/g, (x, prefix, body) => {
-    return prefix + nowrap(makeTexPlaceholder(body, true));
+    return prefix + makeTexPlaceholder(body, true);
   })
 }
 
 function inlineVariables(text) {
-  return text.replace(/\${([^}]+)}{([^}]+)}/g, nowrap('<x-var bind="$2">${$1}</x-var>'))
+  return text.replace(/\${([^}]+)}{([^}]+)}/g, '<x-var bind="$2">${$1}</x-var>')
       .replace(/\${([^}]+)}(?!<\/x-var>)/g, '<span class="var">${$1}</span>');
 }
 
@@ -257,13 +256,13 @@ renderer.link = function (href, title, text) {
   if (href.startsWith('gloss:')) {
     let id = href.slice(6);
     gloss.add(id);
-    return nowrap(`<x-gloss xid="${id}">${text}</x-gloss>`);
+    return `<x-gloss xid="${id}">${text}</x-gloss>`;
   }
 
   if (href.startsWith('bio:')) {
     let id = href.slice(4);
     bios.add(id);
-    return nowrap(`<x-bio xid="${id}">${text}</x-bio>`);
+    return `<x-bio xid="${id}">${text}</x-bio>`;
   }
 
   if (href.startsWith('target:')) {
@@ -282,7 +281,7 @@ renderer.link = function (href, title, text) {
 
   const href1 = entities.decode(href);
   if (href1.startsWith('->')) {
-    return nowrap(`<x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target>`);
+    return `<x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target>`;
   }
 
   return `<a href="${href}" target="_blank">${text}</a>`;
@@ -294,7 +293,7 @@ renderer.codespan = function (code) {
   for (let key of Object.keys(codeBlocks)) {
     if (code.startsWith(`{${key}}`)) {
       code = code.slice(key.length + 2).trim();
-      return `<code class="${codeBlocks[key]}">${code}</code>`
+      return `<code class="${codeBlocks[key]}">${code}</code>`;
     }
   }
 
@@ -451,6 +450,26 @@ function blockAttributes(node) {
 
 // -----------------------------------------------------------------------------
 // Utility Functions
+
+const NOWRAP_QUERY = 'code, x-blank-input, x-blank, x-var, svg.mathjax, x-gloss, x-bio, span.step-target, span.pill, x-target, span.math';
+
+// This prevents line breaks between inline-block elements and punctuation.
+// Note the NOWRAP characters are removed later, after trailing punctuation
+// is added *inside* the <span> element.
+function lineBreaks(dom) {
+  for (const el of dom.querySelectorAll(NOWRAP_QUERY)) {
+    if (!el.nextSibling || el.nextSibling.nodeName !== '#text') continue;
+    const text = el.nextSibling.textContent;
+    if (!text[0].match(/[:.,]/)) continue;
+
+    el.nextSibling.textContent = text.slice(1);
+    const nowrap = el.ownerDocument.createElement('span');
+    nowrap.classList.add('nowrap');
+    el.replaceWith(nowrap);
+    nowrap.appendChild(el);
+    nowrap.innerHTML += text[0];
+  }
+}
 
 function last(x) {
   return x[x.length - 1];
