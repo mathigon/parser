@@ -7,6 +7,11 @@
 
 const entities = require('html-entities').AllHtmlEntities;
 const MathJax = require('mathjax-node');
+const grunt = require('grunt');
+
+
+const cacheFile = __dirname + '/mathjax-cache.tmp';
+const mathJaxStore = grunt.file.exists(cacheFile) ? grunt.file.readJSON(cacheFile) : {};
 
 
 MathJax.config({
@@ -22,8 +27,12 @@ const mathJaxCache = {};
 let mathJaxCount = 0;
 
 module.exports.makeTexPlaceholder = function(code, isInline = false) {
+  code = entities.decode(code);
+
+  if ((code + isInline) in mathJaxStore) return mathJaxStore[code + isInline];
+
   const id = `XEQUATIONX${mathJaxCount++}XEQUATIONX`;
-  mathJaxCache[id] = [entities.decode(code), isInline];
+  mathJaxCache[id] = [code, isInline];
   return id;
 };
 
@@ -40,7 +49,10 @@ function texToSvg(code, isInline) {
       if (data.errors) {
         console.warn(`\nMathJax Error: ${data.errors} at "${code}"`);
       }
-      resolve(cleanSvg(data.svg || ''));
+      const svg = cleanSvg(data.svg || '');
+      mathJaxStore[code + isInline] = svg;
+      grunt.file.write(cacheFile, JSON.stringify(mathJaxStore));
+      resolve(svg);
     });
   });
 }
