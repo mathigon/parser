@@ -90,32 +90,37 @@ module.exports = function(grunt) {
     const cacheFile = path.join(process.cwd(), this.files[0].dest, '../cache.json');
     const cache = grunt.file.exists(cacheFile) ? grunt.file.readJSON(cacheFile) : {};
 
-    const bios = await loadYAML(shared, 'bios.yaml', 'bio');
-    const gloss = await loadYAML(shared, 'glossary.yaml', 'text');
-    const hints = await loadYAML(shared, 'hints.yaml');
+    try {
+      const bios = await loadYAML(shared, 'bios.yaml', 'bio');
+      const gloss = await loadYAML(shared, 'glossary.yaml', 'text');
+      const hints = await loadYAML(shared, 'hints.yaml');
 
-    for (let locale of options.languages) {
-      const localBios = await loadYAML(shared, 'bios.yaml', 'bio', locale, bios);
-      const localGloss = await loadYAML(shared, 'glossary.yaml', 'text', locale, gloss);
-      const localHints = await loadYAML(shared, 'hints.yaml', null, locale, hints);
+      for (let locale of options.languages) {
+        const localBios = await loadYAML(shared, 'bios.yaml', 'bio', locale, bios);
+        const localGloss = await loadYAML(shared, 'glossary.yaml', 'text', locale, gloss);
+        const localHints = await loadYAML(shared, 'hints.yaml', null, locale, hints);
 
-      for (let file of this.files) {
-        const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
-        const src = path.join(process.cwd(), file.src[0]);
-        const dest = path.join(process.cwd(), file.dest, locale);
+        for (let file of this.files) {
+          const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
+          const src = path.join(process.cwd(), file.src[0]);
+          const dest = path.join(process.cwd(), file.dest, locale);
 
-        const content = loadFile(src, 'content.md', locale);
-        if (!content) continue;
+          const content = loadFile(src, 'content.md', locale);
+          if (!content) continue;
 
-        if (options.cache) {
-          const hash = crypto.createHash('md5').update(content).digest('hex');
-          if (cache[id + '-' + locale] === hash) continue;
-          cache[id + '-' + locale] = hash;
-          console.log(`>> Parsing ${id} / ${locale}`);
+          if (options.cache) {
+            const hash = crypto.createHash('md5').update(content).digest('hex');
+            if (cache[id + '-' + locale] === hash) continue;
+            cache[id + '-' + locale] = hash;
+            console.log(`>> Parsing ${id} / ${locale}`);
+          }
+
+          await generate(grunt, content, src, dest, id, localBios, localGloss, localHints, locale)
         }
-
-        await generate(grunt, content, src, dest, id, localBios, localGloss, localHints, locale)
       }
+    } catch(e) {
+      grunt.log.error(e);
+      done(false);
     }
 
     if (options.cache) grunt.file.write(cacheFile, JSON.stringify(cache));
