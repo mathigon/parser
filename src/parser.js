@@ -245,7 +245,8 @@ const codeBlocks = {
   c: 'language-clike',
   jl: 'language-julia',
   r: 'language-r',
-  code: 'language-markup'
+  code: 'language-markup',
+  sh: 'language-bash'
 };
 
 renderer.link = function (href, title, text) {
