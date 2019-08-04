@@ -460,7 +460,7 @@ function lineBreaks(dom) {
   for (const el of dom.querySelectorAll(NOWRAP_QUERY)) {
     if (!el.nextSibling || el.nextSibling.nodeName !== '#text') continue;
     const text = el.nextSibling.textContent;
-    if (!text[0].match(/[:.,]/)) continue;
+    if (!text[0].match(/[:.,!?]/)) continue;
 
     el.nextSibling.textContent = text.slice(1);
     const nowrap = el.ownerDocument.createElement('span');
