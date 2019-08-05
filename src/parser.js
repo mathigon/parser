@@ -7,7 +7,6 @@
 
 const yaml = require('yamljs');
 const marked = require('marked');
-const ascii2mathml = require('ascii2mathml');
 const pug = require('pug');
 const emoji = require('node-emoji');
 const entities = require('html-entities').AllHtmlEntities;
@@ -298,9 +297,8 @@ renderer.codespan = function (code) {
     }
   }
 
-  // TODO Make native expression parsing the default, remove § prefix.
-  if (code.startsWith('§')) {
-    const expr = Expression.parse(code.slice(1));
+  try {
+    const expr = Expression.parse(code);
     const maths = expr.toMathML({
       pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
       input: (value) => `<x-blank-input solution="${value.val.n}"></x-blank-input>`,
@@ -308,14 +306,10 @@ renderer.codespan = function (code) {
       arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`
     });
     return `<span class="math">${maths}</span>`;
+  } catch(e) {
+    console.log(`Maths parsing error in "${code}":`, e.toString());
+    return '<span class="math"></span>';
   }
-
-  const maths = ascii2mathml(code, {bare: true})
-      .replace(/<mo>-<\/mo>/g, '<mo>−</mo>')
-      .replace(/\s*accent="true"/g, '')
-      .replace(/lspace="0" rspace="0">′/g, '>′')
-      .replace(/>(.)<\/mo>/g, (_, mo) => ` value="${mo}">${mo}</mo>`);
-  return `<span class="math">${maths}</span>`;
 };
 
 renderer.heading = function (text, level) {
@@ -461,7 +455,7 @@ function lineBreaks(dom) {
   for (const el of dom.querySelectorAll(NOWRAP_QUERY)) {
     if (!el.nextSibling || el.nextSibling.nodeName !== '#text') continue;
     const text = el.nextSibling.textContent;
-    if (!text[0].match(/[:.,!?]/)) continue;
+    if (!text[0].match(/[:.,!?°]/)) continue;
 
     el.nextSibling.textContent = text.slice(1);
     const nowrap = el.ownerDocument.createElement('span');
