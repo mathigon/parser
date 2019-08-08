@@ -301,9 +301,11 @@ renderer.codespan = function (code) {
     const expr = Expression.parse(code);
     const maths = expr.toMathML({
       pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
+      target: (expr, target) => `<span class="step-target" data-to="${target.val.s}">${expr}</span>`,
       input: (value) => `<x-blank-input solution="${value.val.n}"></x-blank-input>`,
       blank: (...values) => `<x-blank>${values.map(v => `<span class="choice">${v}</span>`).join('')}</x-blank>`,
-      arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`
+      arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`,
+      var: (value) => `<span class="var">\${${value.val.s}}</span>`
     });
     return `<span class="math">${maths}</span>`;
   } catch(e) {
