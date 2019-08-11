@@ -28,10 +28,10 @@ async function loadYAML(path, name, textField = null, locale = 'en', fallback = 
     if (textField) {
       // Used for bios and glossary.
       data[d][textField] = await parseSimple(data[d][textField]);
-    } else if (Array.isArray(data[d])) {
+    } else if (Array.isArray(data[d]) && (typeof data[d][0] === 'string')) {
       // Used for hint arrays
       data[d] = await Promise.all(data[d].map(x => parseSimple(x)));
-    } else {
+    } else if (typeof data[d][0] === 'string') {
       // Used for individual hints.
       data[d] = await parseSimple(data[d]);
     }
@@ -130,3 +130,4 @@ module.exports = function(grunt) {
 
 module.exports.parseFull = parse;
 module.exports.parseSimple = parseSimple;
+module.exports.loadYAML = loadYAML;
