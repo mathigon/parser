@@ -82,9 +82,6 @@ module.exports.parse = async function(id, content, path) {
   // Asynchronously replace all LaTeX Equation placeholders.
   result = await fillTexPlaceholders(result);
 
-  // Replace non-breaking space and escaped $s.
-  result = result.replace(/\\\s/g, '&nbsp;').replace(/\\\$/g, '$');
-
   const doc = (new JSDom('<x-step>' + result + '</x-step>')).window.document.body;
 
   // Parse custom element attributess
@@ -231,6 +228,10 @@ function parseParagraph(text) {
   text = inlineBlanks(text);
   text = inlineEquations(text);
   text = inlineVariables(text);
+
+  // Replace non-breaking space and escaped $s.
+  text = text.replace(/\\ /g, '&nbsp;').replace(/\\\$/g, '$');
+
   return emoji.emojify(text, x => x, emojiImg);
 }
 
