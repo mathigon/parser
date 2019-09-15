@@ -157,6 +157,10 @@ function extractSectionData(doc) {
     let step = steps[i];
     if (!step.id) step.id = 'step-' + i;
     $steps[i].id = step.id;
+
+    if (step.id.includes('.'))
+      throw new Error(`Step IDs cannot contain dots: ${step.id}`);
+
     if (step.goals) $steps[i].setAttribute('goals', step.goals);
     if (step.class) $steps[i].setAttribute('class', step.class);
 
@@ -172,6 +176,9 @@ function extractSectionData(doc) {
 
     if (step.sectionBackground) last(sections).background = step.sectionBackground;
     step.section = last(sections).id;
+
+    if (last(sections).id.includes('.'))
+      throw new Error(`Section IDs cannot contain dots: ${last(sections).id}`);
 
     const html = minify($steps[i].outerHTML, minifyOptions);
     stepsHTML[step.id] = html;
