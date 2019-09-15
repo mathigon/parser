@@ -169,7 +169,7 @@ function extractSectionData(doc) {
       const sectionId = step.section || $h1.textContent.toLowerCase()
           .replace(/\s/g, '-').replace(/[^\w-]/g, '');
       const sectionStatus = step.sectionStatus || '';
-      sections.push({title: $h1.textContent, id: sectionId, goals: 0, status: sectionStatus});
+      sections.push({title: $h1.textContent, id: sectionId, goals: 0, status: sectionStatus, duration: 0});
       sectionsHTML[sectionId] = '';
       $h1.remove();
     }
@@ -191,6 +191,11 @@ function extractSectionData(doc) {
         $steps[i].querySelectorAll('x-slideshow').length;
     last(sections).goals += step.goals;
     goals += step.goals;
+
+    // Calculate the reading time per section using 100 words per minute and
+    // 30s per interactive goal.
+    last(sections).duration += $steps[i].textContent.split(' ').length / 100;
+    last(sections).duration += step.goals / 2;
   }
 
   return {sectionsHTML, stepsHTML, sections, goals};
