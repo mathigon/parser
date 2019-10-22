@@ -169,7 +169,7 @@ function extractSectionData(doc) {
       const sectionId = step.section || $h1.textContent.toLowerCase()
           .replace(/\s/g, '-').replace(/[^\w-]/g, '');
       const sectionStatus = step.sectionStatus || '';
-      sections.push({title: $h1.textContent, id: sectionId, goals: 0, status: sectionStatus, duration: 0});
+      sections.push({title: $h1.textContent, id: sectionId, goals: 0, status: sectionStatus, duration: 1});
       sectionsHTML[sectionId] = '';
       $h1.remove();
     }
@@ -192,10 +192,15 @@ function extractSectionData(doc) {
     last(sections).goals += step.goals;
     goals += step.goals;
 
-    // Calculate the reading time per section using 100 words per minute and
-    // 30s per interactive goal.
-    last(sections).duration += $steps[i].textContent.split(' ').length / 100;
+    // Calculate the reading time per section using 75 words per minute and
+    // 30s per interactive goal (plus 1 minutes added above);
+    last(sections).duration += $steps[i].textContent.split(/\s+/).length / 75;
     last(sections).duration += step.goals / 2;
+  }
+
+  // Round the duration to the nearest multiple of 5.
+  for (const s of sections) {
+    s.duration = Math.max(5, 5 * Math.ceil(s.duration / 5));
   }
 
   return {sectionsHTML, stepsHTML, sections, goals};
