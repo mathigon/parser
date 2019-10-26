@@ -29,11 +29,6 @@ const minifyOptions = {
   removeComments: true
 };
 
-const autoGoals = ['x-blank', 'x-blank-input', 'x-equation', 'x-var',
-  'x-slider', '.next-step', 'x-sortable', 'x-gameplay', 'x-slideshow .slide',
-  'x-slideshow .legend', 'x-picker .item:not([data-error])', 'x-code-checker',
-  'x-quill'].join(', ');
-
 
 // -----------------------------------------------------------------------------
 // Exported Functions
@@ -122,15 +117,11 @@ module.exports.parse = async function(id, content, path) {
     }
   }
 
-  const {sectionsHTML, stepsHTML, sections, goals} = extractSectionData(doc);
+  const sections = extractSectionData(doc);
+  const goals = steps.map(s => s.goals.length).reduce((a, b) => a + b);
+  const data = {sections, steps, goals, title};
 
-  return {
-    bios,
-    gloss,
-    data: {sections, steps, goals, title},
-    stepsHTML,
-    sectionsHTML
-  };
+  return {bios, gloss, data};
 };
 
 module.exports.parseSimple = async function (text) {
@@ -146,56 +137,69 @@ module.exports.parseSimple = async function (text) {
 // -----------------------------------------------------------------------------
 // Section and Step Configuration
 
+function checkId(sectionId) {
+  if (sectionId && sectionId.includes('.'))
+    throw new Error(`Step and section IDs cannot contain dots: ${sectionId}`);
+  return sectionId
+}
+
+function getGoals($step, query, goalName, drop=0) {
+  const items = Array.from($step.querySelectorAll(query)).slice(drop);
+  return items.map((_,i) => goalName + '-' + i);
+}
+
 function extractSectionData(doc) {
-  const sectionsHTML = {};
-  const stepsHTML = {};
   const sections = [];
-  let goals = 0;
 
   const $steps = doc.querySelectorAll('x-step');
-  for (let i = 0; i < $steps.length; ++i) {
+  for (const [i, $step] of $steps.entries()) {
     let step = steps[i];
-    if (!step.id) step.id = 'step-' + i;
+
+    step.id = checkId(step.id) || 'step-' + i;
     $steps[i].id = step.id;
 
-    if (step.id.includes('.'))
-      throw new Error(`Step IDs cannot contain dots: ${step.id}`);
+    if (step.class) $step.setAttribute('class', step.class);
 
-    if (step.goals) $steps[i].setAttribute('goals', step.goals);
-    if (step.class) $steps[i].setAttribute('class', step.class);
-
-    const $h1 = $steps[i].querySelector('h1');
+    const $h1 = $step.querySelector('h1');
     if ($h1) {
-      const sectionId = step.section || $h1.textContent.toLowerCase()
-          .replace(/\s/g, '-').replace(/[^\w-]/g, '');
-      const sectionStatus = step.sectionStatus || '';
-      sections.push({title: $h1.textContent, id: sectionId, goals: 0, status: sectionStatus, duration: 1});
-      sectionsHTML[sectionId] = '';
+      sections.push({
+        id: checkId(step.section) || $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, ''),
+        title: $h1.textContent,
+        status: step.sectionStatus || '',
+        background: step.sectionBackground || '',
+        goals: 0,  duration: 1, steps: []
+      });
       $h1.remove();
     }
 
-    if (step.sectionBackground) last(sections).background = step.sectionBackground;
     step.section = last(sections).id;
+    last(sections).steps.push(step.id);
 
-    if (last(sections).id.includes('.'))
-      throw new Error(`Section IDs cannot contain dots: ${last(sections).id}`);
-
-    const html = minify($steps[i].outerHTML, minifyOptions);
-    stepsHTML[step.id] = html;
-    sectionsHTML[last(sections).id] += html;
-
-    // Some elements automatically generate goals (e.g. blanks).
-    // The last item in slideshows doesn't count, so we have to subtract those.
-    step.goals = (step.goals ? step.goals.split(' ').length : 0) +
-        $steps[i].querySelectorAll(autoGoals).length -
-        $steps[i].querySelectorAll('x-slideshow').length;
-    last(sections).goals += step.goals;
-    goals += step.goals;
+    // Generate the required goals for all built-in components
+    // TODO Find a more generic solution to handle all this!
+    step.goals = step.goals ? step.goals.split(' ') : [];
+    step.goals.push(...getGoals($step, 'x-blank, x-blank-input', 'blank'));
+    step.goals.push(...getGoals($step, '.next-step', 'next'));
+    step.goals.push(...getGoals($step, 'x-var', 'var'));
+    step.goals.push(...getGoals($step, 'x-slider', 'slider'));
+    step.goals.push(...getGoals($step, 'x-sortable', 'sortable'));
+    step.goals.push(...getGoals($step, 'x-equation', 'eqn'));
+    step.goals.push(...getGoals($step, 'x-slideshow .legend', 'slide', 1));
+    if ($step.querySelector('x-quill')) step.goals.push('quill');
+    if ($step.querySelector('x-gameplay')) step.goals.push('gameplay');
+    Array.from($step.querySelectorAll('x-picker .item')).forEach(($i, i) => {
+      if (!$i.hasAttribute('data-error')) step.goals.push('picker-' + i);
+    });
+    $step.setAttribute('goals', step.goals.join(' '));
+    last(sections).goals += step.goals.length;
 
     // Calculate the reading time per section using 75 words per minute and
     // 30s per interactive goal (plus 1 minutes added above);
-    last(sections).duration += $steps[i].textContent.split(/\s+/).length / 75;
-    last(sections).duration += step.goals / 2;
+    last(sections).duration += $step.textContent.split(/\s+/).length / 75;
+    last(sections).duration += step.goals.length / 2;
+
+    // Generate the Step HTML
+    step.html = minify($step.outerHTML, minifyOptions);
   }
 
   // Round the duration to the nearest multiple of 5.
@@ -203,7 +207,7 @@ function extractSectionData(doc) {
     s.duration = Math.max(5, 5 * Math.ceil(s.duration / 5));
   }
 
-  return {sectionsHTML, stepsHTML, sections, goals};
+  return sections;
 }
 
 

@@ -47,7 +47,7 @@ async function loadYAML(path, name, textField = null, locale = 'en', fallback = 
 // -----------------------------------------------------------------------------
 
 async function generate(grunt, content, src, dest, id, allBios, allGloss, sharedHints, locale) {
-  let {bios, gloss, data, stepsHTML, sectionsHTML} = await parse(id, content, src);
+  let {bios, gloss, data} = await parse(id, content, src);
   grunt.file.write(dest + '/data.json', JSON.stringify(data));
 
   let biosObj = {};
@@ -67,14 +67,6 @@ async function generate(grunt, content, src, dest, id, allBios, allGloss, shared
   // TODO Fall back to the English hints if missing!
   const hints = await loadYAML(src, 'hints.yaml', null, locale, sharedHints);
   grunt.file.write(dest + '/hints.json', JSON.stringify(hints));
-
-  for (let s of Object.keys(stepsHTML)) {
-    grunt.file.write(dest + `/steps/${s}.html`, stepsHTML[s]);
-  }
-
-  for (let s of Object.keys(sectionsHTML)) {
-    grunt.file.write(dest + `/sections/${s}.html`, sectionsHTML[s]);
-  }
 }
 
 // -----------------------------------------------------------------------------
