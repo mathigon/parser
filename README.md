@@ -18,4 +18,3 @@ Contributor License Agreement](https://gist.github.com/plegner/5ad5b7be2948a4ad0
 ## Copyright and License
 
 Copyright © Mathigon ([dev@mathigon.org](mailto:dev@mathigon.org))  
-Released under the [MIT license](LICENSE)
