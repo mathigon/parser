@@ -155,8 +155,9 @@ function extractSectionData(doc) {
   for (const [i, $step] of $steps.entries()) {
     let step = steps[i];
 
+    // TODO Check that step IDs are unique!
     step.id = checkId(step.id) || 'step-' + i;
-    $steps[i].id = step.id;
+    $step.id = step.id;
 
     if (step.class) $step.setAttribute('class', step.class);
 
