@@ -6,9 +6,11 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const through2 = require('through2');
 const yaml = require('yamljs');
 const File = require('vinyl');
+
 const {parse, parseSimple} = require('./src/parser');
 
 const YAML_CACHE = new Map();
@@ -97,16 +99,27 @@ async function generate(content, base, id, locale) {
 
 // -----------------------------------------------------------------------------
 
-module.exports.gulp = (languages = ['en']) => {
+module.exports.gulp = (languages = ['en'], cacheFile = '') => {
   return through2.obj(async function (file, _, next) {
-    // TODO Add caching
+    const id = file.basename;
+
+    const cacheData = cacheFile && fs.existsSync(cacheFile) ?
+        JSON.parse(fs.readFileSync(cacheFile, 'utf8')) : {};
 
     const promises = [];
     for (let locale of languages) {
       const content = loadFile(file.path, 'content.md', locale);
       if (!content) continue;
-      promises.push(generate(content, file.path, file.basename, locale))
+
+      const hash = crypto.createHash('md5').update(content).digest('hex');
+      if (cacheData[file.basename + '-' + locale] === hash) continue;
+      cacheData[id + '-' + locale] = hash;
+
+      console.log(`>> Parsing ${id} / ${locale}`);
+      promises.push(generate(content, file.path, id, locale))
     }
+
+    if (cacheFile) fs.writeFileSync(cacheFile, JSON.stringify(cacheData));
 
     const fileSets = await Promise.all(promises);
     for (const files of fileSets) {

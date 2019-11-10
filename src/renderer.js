@@ -9,7 +9,9 @@ const marked = require('marked');
 const pug = require('pug');
 const emoji = require('node-emoji');
 const entities = require('html-entities').AllHtmlEntities;
-const Expression = require('@mathigon/hilbert').Expression;
+
+const {last} = require('@mathigon/core');
+const {Expression} = require('@mathigon/hilbert');
 const {makeTexPlaceholder} = require('./mathjax');
 
 
@@ -154,10 +156,6 @@ module.exports.getRenderer = function (course, directory) {
 
 // -----------------------------------------------------------------------------
 // Helper Functions
-
-function last(x) {
-  return x[x.length - 1];
-}
 
 function inlineBlanks(text) {
   return text.replace(/\[\[([^\]]+)]]/g, (x, body) => {

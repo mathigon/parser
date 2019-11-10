@@ -9,6 +9,7 @@ const pug = require('pug');
 const JSDom = require('jsdom').JSDOM;
 const minify = require('html-minifier').minify;
 
+const {last} = require('@mathigon/core');
 const {fillTexPlaceholders} = require('./mathjax');
 const {getRenderer} = require('./renderer');
 
@@ -296,10 +297,6 @@ function lineBreaks(dom) {
     nowrap.appendChild(el);
     nowrap.innerHTML += text[0];
   }
-}
-
-function last(x) {
-  return x[x.length - 1];
 }
 
 function nodes(element) {
