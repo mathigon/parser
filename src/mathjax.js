@@ -5,13 +5,13 @@
 
 
 
+const fs = require('fs');
 const entities = require('html-entities').AllHtmlEntities;
 const MathJax = require('mathjax-node');
-const grunt = require('grunt');
 
 
 const cacheFile = __dirname + '/mathjax-cache.tmp';
-const mathJaxStore = grunt.file.exists(cacheFile) ? grunt.file.readJSON(cacheFile) : {};
+const mathJaxStore = fs.existsSync(cacheFile) ? JSON.parse(fs.readFileSync(cacheFile, 'utf-8')) : {};
 
 
 MathJax.config({
@@ -51,7 +51,7 @@ function texToSvg(code, isInline) {
       }
       const svg = cleanSvg(data.svg || '');
       mathJaxStore[code + isInline] = svg;
-      grunt.file.write(cacheFile, JSON.stringify(mathJaxStore));
+      fs.writeFileSync(cacheFile, JSON.stringify(mathJaxStore));
       resolve(svg);
     });
   });

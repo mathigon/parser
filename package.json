@@ -1,6 +1,6 @@
 {
   "name": "@mathigon/parser",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Custom markdown parsers for Mathigon textbooks.",
   "homepage": "https://mathigon.org/",
   "license": "UNLICENSED",
@@ -15,8 +15,7 @@
   "main": "index.js",
   "repository": "mathigon/parser",
   "dependencies": {
-    "@mathigon/hilbert": "^0.2.3",
-    "grunt": "^1.0.3",
+    "@mathigon/hilbert": "^0.3.2",
     "html-entities": "^1.2.1",
     "html-minifier": "^3.5.21",
     "jsdom": "^12.2.0",
@@ -24,6 +23,8 @@
     "mathjax-node": "^2.1.1",
     "node-emoji": "^1.8.1",
     "pug": "^2.0.3",
+    "through2": "^3.0.1",
+    "vinyl": "^2.2.0",
     "yamljs": "^0.3.0"
   }
 }

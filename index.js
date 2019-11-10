@@ -1,18 +1,18 @@
 // =============================================================================
-// Textbooks Parser Grunt Plugin
+// Textbooks Parser Gulp Plugin
 // (c) Mathigon
 // =============================================================================
 
 
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
+const through2 = require('through2');
 const yaml = require('yamljs');
-
+const File = require('vinyl');
 const {parse, parseSimple} = require('./src/parser');
 
+const YAML_CACHE = new Map();
 
-// -----------------------------------------------------------------------------
 
 function loadFile(root, name, locale) {
   if (locale !== 'en') name = 'translations/' + name.replace('.', `_${locale}.`);
@@ -20,10 +20,7 @@ function loadFile(root, name, locale) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 }
 
-async function loadYAML(path, name, textField = null, locale = 'en', fallback = {}) {
-  const text = loadFile(path, name, locale);
-  const data = text ? yaml.parse(text) || {} : {};
-
+async function parseYAML(data, textField = null) {
   for (let d of Object.keys(data)) {
     if (textField) {
       // Used for bios and glossary.
@@ -36,87 +33,87 @@ async function loadYAML(path, name, textField = null, locale = 'en', fallback = 
       data[d] = await parseSimple(data[d]);
     }
   }
+}
 
-  for (let d of Object.keys(fallback)) {
-    if (!data[d]) data[d] = fallback[d];
+async function loadYAML(base, name, textField = null, locale = 'en') {
+  const id = base + '-' + name + '-' + locale;
+  if (YAML_CACHE.has(id)) return YAML_CACHE.get(id);
+
+  const text = loadFile(base, name, locale);
+  const data = text ? yaml.parse(text) || {} : {};
+  await parseYAML(data, textField);
+
+  if (locale !== 'en') {
+    const fallback = await loadYAML(base, name, textField, 'en');
+    for (let d of Object.keys(fallback)) {
+      if (!data[d]) data[d] = fallback[d];
+    }
   }
 
+  YAML_CACHE.set(id, data);
   return data;
 }
 
 // -----------------------------------------------------------------------------
 
-async function generate(grunt, content, src, dest, id, allBios, allGloss, sharedHints, locale) {
-  let {bios, gloss, data} = await parse(id, content, src);
-  grunt.file.write(dest + '/data.json', JSON.stringify(data));
+function createFile(dest, name, content) {
+  return new File({
+    base: dest,
+    path: path.join(dest, name),
+    contents: Buffer.from(content)
+  });
+}
 
-  let biosObj = {};
+async function generate(content, base, id, locale) {
+  const dest = path.join(base, '../');
+  const shared = path.join(base, '../shared');
+
+  const {bios, gloss, data} = await parse(id, content, base);
+
+  const biosData = await loadYAML(shared, 'bios.yaml', 'bio', locale);
+  const biosObj = {};
   for (let b of bios) {
-    if (!(b in allBios)) grunt.log.error('Missing bio: ' + b);
-    biosObj[b] = allBios[b];
+    if (!(b in biosData)) console.warn('Missing bio: ' + b);
+    biosObj[b] = biosData[b];
   }
-  grunt.file.write(dest + '/bios.json', JSON.stringify(biosObj));
+  const biosFile = createFile(dest, `${id}/bios_${locale}.json`, JSON.stringify(biosObj));
 
-  let glossObj = {};
+  const glossData = await loadYAML(shared, 'glossary.yaml', 'text', locale);
+  const glossObj = {};
   for (let g of gloss) {
-    if (!(g in allGloss)) grunt.log.error('Missing glossary: ' + g);
-    glossObj[g] = allGloss[g];
+    if (!(g in glossData)) console.warn('Missing glossary: ' + g);
+    glossObj[g] = glossData[g];
   }
-  grunt.file.write(dest + '/glossary.json', JSON.stringify(glossObj));
+  const glossFile = createFile(dest, `${id}/glossary_${locale}.json`, JSON.stringify(glossObj));
 
-  // TODO Fall back to the English hints if missing!
-  const hints = await loadYAML(src, 'hints.yaml', null, locale, sharedHints);
-  grunt.file.write(dest + '/hints.json', JSON.stringify(hints));
+  const courseHints = await loadYAML(base, 'hints.yaml', null, locale);
+  const globalHints = await loadYAML(shared, 'hints.yaml', null, locale);
+  const hintsObj = Object.assign({}, globalHints, courseHints);
+  const hintsFile = createFile(dest, `${id}/hints_${locale}.json`, JSON.stringify(hintsObj));
+
+  const dataFile = createFile(dest, `${id}/data_${locale}.json`, JSON.stringify(data));
+  return [dataFile, biosFile, glossFile, hintsFile];
 }
 
 // -----------------------------------------------------------------------------
 
-module.exports = function(grunt) {
-  grunt.registerMultiTask('textbooks', 'Mathigon Markdown parser.', async function() {
-    const options = this.options({root: 'content', languages: ['en'], cache: false});
-    const done = this.async();
+module.exports.gulp = (languages = ['en']) => {
+  return through2.obj(async function (file, _, next) {
+    // TODO Add caching
 
-    const root = path.join(process.cwd(), options.root);
-    const shared = root + '/shared';
-
-    const cacheFile = path.join(process.cwd(), this.files[0].dest, '../cache.json');
-    const cache = grunt.file.exists(cacheFile) ? grunt.file.readJSON(cacheFile) : {};
-
-    try {
-      const bios = await loadYAML(shared, 'bios.yaml', 'bio');
-      const gloss = await loadYAML(shared, 'glossary.yaml', 'text');
-      const hints = await loadYAML(shared, 'hints.yaml');
-
-      for (let locale of options.languages) {
-        const localBios = await loadYAML(shared, 'bios.yaml', 'bio', locale, bios);
-        const localGloss = await loadYAML(shared, 'glossary.yaml', 'text', locale, gloss);
-        const localHints = await loadYAML(shared, 'hints.yaml', null, locale, hints);
-
-        for (let file of this.files) {
-          const id = file.src[0].split('/')[file.src[0].split('/').length - 1];
-          const src = path.join(process.cwd(), file.src[0]);
-          const dest = path.join(process.cwd(), file.dest, locale);
-
-          const content = loadFile(src, 'content.md', locale);
-          if (!content) continue;
-
-          if (options.cache) {
-            const hash = crypto.createHash('md5').update(content).digest('hex');
-            if (cache[id + '-' + locale] === hash) continue;
-            cache[id + '-' + locale] = hash;
-            console.log(`>> Parsing ${id} / ${locale}`);
-          }
-
-          await generate(grunt, content, src, dest, id, localBios, localGloss, localHints, locale)
-        }
-      }
-    } catch(e) {
-      grunt.log.error(e);
-      done(false);
+    const promises = [];
+    for (let locale of languages) {
+      const content = loadFile(file.path, 'content.md', locale);
+      if (!content) continue;
+      promises.push(generate(content, file.path, file.basename, locale))
     }
 
-    if (options.cache) grunt.file.write(cacheFile, JSON.stringify(cache));
-    done();
+    const fileSets = await Promise.all(promises);
+    for (const files of fileSets) {
+      for (const f of files) this.push(f);
+    }
+
+    next();
   });
 };
 
