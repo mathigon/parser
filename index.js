@@ -22,31 +22,41 @@ function loadFile(root, name, locale) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 }
 
-async function parseYAML(data, textField = null) {
-  for (let d of Object.keys(data)) {
-    if (textField) {
-      // Used for bios and glossary.
-      data[d][textField] = await parseSimple(data[d][textField]);
-    } else if (Array.isArray(data[d]) && (typeof data[d][0] === 'string')) {
-      // Used for hint arrays
-      data[d] = await Promise.all(data[d].map(x => parseSimple(x)));
-    } else if (typeof data[d][0] === 'string') {
-      // Used for individual hints.
-      data[d] = await parseSimple(data[d]);
+function replaceMarkdown(data) {
+  // If data is an array, we replace all items in the array.
+  if (Array.isArray(data)) {
+    return Promise.all(data.map(x => parseSimple(x)));
+  } else {
+    return parseSimple(data);
+  }
+}
+
+async function parseYAML(data, markdownFields) {
+  if (markdownFields === '*') {
+    // Hints: we replace all top-level values
+    for (const key of Object.keys(data)) {
+      data[key] = await replaceMarkdown(data[key]);
+    }
+  } else if (markdownFields) {
+    // Bio, Gloss and Quiz: we loop over all object and replace specific fields.
+    for (const obj of Object.values(data)) {  // data can be an object or array!
+      for (const field of markdownFields.split(',')) {
+        obj[field] = await replaceMarkdown(obj[field])
+      }
     }
   }
 }
 
-async function loadYAML(base, name, textField = null, locale = 'en') {
+async function loadYAML(base, name, markdownFields, locale = 'en') {
   const id = base + '-' + name + '-' + locale;
   if (YAML_CACHE.has(id)) return YAML_CACHE.get(id);
 
   const text = loadFile(base, name, locale);
   const data = text ? yaml.parse(text) || {} : {};
-  await parseYAML(data, textField);
+  await parseYAML(data, markdownFields);
 
   if (locale !== 'en') {
-    const fallback = await loadYAML(base, name, textField, 'en');
+    const fallback = await loadYAML(base, name, markdownFields, 'en');
     for (let d of Object.keys(fallback)) {
       if (!data[d]) data[d] = fallback[d];
     }
@@ -88,13 +98,16 @@ async function generate(content, base, id, locale) {
   }
   const glossFile = createFile(dest, `${id}/glossary_${locale}.json`, JSON.stringify(glossObj));
 
-  const courseHints = await loadYAML(base, 'hints.yaml', null, locale);
-  const globalHints = await loadYAML(shared, 'hints.yaml', null, locale);
+  const quizObj = await loadYAML(base, 'quiz.yaml', 'text,choices,hints', locale);
+  const quizFile = createFile(dest, `${id}/quiz_${locale}.json`, JSON.stringify(quizObj));
+
+  const courseHints = await loadYAML(base, 'hints.yaml', '*', locale);
+  const globalHints = await loadYAML(shared, 'hints.yaml', '*', locale);
   const hintsObj = Object.assign({}, globalHints, courseHints);
   const hintsFile = createFile(dest, `${id}/hints_${locale}.json`, JSON.stringify(hintsObj));
 
   const dataFile = createFile(dest, `${id}/data_${locale}.json`, JSON.stringify(data));
-  return [dataFile, biosFile, glossFile, hintsFile];
+  return [dataFile, biosFile, glossFile, hintsFile, quizFile];
 }
 
 // -----------------------------------------------------------------------------
