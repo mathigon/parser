@@ -170,6 +170,7 @@ function extractSectionData(doc, steps) {
     step.goals.push(...getGoals($step, 'x-sortable', 'sortable'));
     step.goals.push(...getGoals($step, 'x-equation', 'eqn'));
     step.goals.push(...getGoals($step, 'x-slideshow .legend', 'slide', 1));
+    step.goals.push(...getGoals($step, 'x-algebra-flow ul li', 'algebra-flow', 1));
     if ($step.querySelector('x-quill')) step.goals.push('quill');
     if ($step.querySelector('x-gameplay')) step.goals.push('gameplay');
     Array.from($step.querySelectorAll('x-picker .item')).forEach(($i, i) => {
