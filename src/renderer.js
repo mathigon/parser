@@ -28,7 +28,7 @@ const codeBlocks = {
 const customMathML = {
   pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
   target: (expr, target) => `<span class="step-target" data-to="${target.val.s}">${expr}</span>`,
-  input: (value) => `<x-blank-input solution="${value.val.n}"></x-blank-input>`,
+  input: (value, placeholder) => `<x-blank-input solution="${value.val.n}" placeholder="${placeholder ? placeholder.val.s : '???'}"></x-blank-input>`,
   blank: (...values) => `<x-blank>${values.map(v => `<span class="choice">${v}</span>`).join('')}</x-blank>`,
   arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`,
   var: (value) => `<span class="var">\${${value.val.s}}</span>`
@@ -90,10 +90,13 @@ module.exports.getRenderer = function (course, directory) {
       }
     }
 
+    const newRender = code.startsWith('§');
+    if (newRender) code = code.slice(1);
+
     try {
       const expr = Expression.parse(code);
       const maths = expr.toMathML(customMathML);
-      return `<span class="math">${maths}</span>`;
+      return newRender ? `<x-math>${maths}</x-math>` : `<span class="math">${maths}</span>`;
     } catch (e) {
       console.log(`Maths parsing error in "${code}":`, e.toString());
       return '<span class="math"></span>';
