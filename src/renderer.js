@@ -134,7 +134,12 @@ module.exports.getRenderer = function (course, directory) {
     }
 
     // Indented Pug HTML blocks
-    if (code.indexOf('mixin ') >= 0) globalPug += code + '\n\n';
+    // We store mixin code to a global variable, and then prepend it to all
+    // following PUG blocks. This allows you to define file-level mixins.
+    // TODO Also remove code that is not a mixin.
+    const hasMixins = code.split('\n').find(line => line.startsWith('mixin'));
+    if (hasMixins) globalPug += code + '\n\n';
+
     return pug.render(globalPug + code, {filename: directory + '/content.pug'});
   };
 
