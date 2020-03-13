@@ -41,7 +41,7 @@ async function parseYAML(data, markdownFields) {
     // Bio, Gloss and Quiz: we loop over all object and replace specific fields.
     for (const obj of Object.values(data)) {  // data can be an object or array!
       for (const field of markdownFields.split(',')) {
-        obj[field] = await replaceMarkdown(obj[field])
+        obj[field] = obj[field] ? await replaceMarkdown(obj[field]) : '';
       }
     }
   }
