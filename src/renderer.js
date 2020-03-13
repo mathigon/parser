@@ -27,9 +27,9 @@ const codeBlocks = {
 
 const customMathML = {
   pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
-  target: (expr, target) => `<span class="step-target" data-to="${target.val.s}">${expr}</span>`,
+  target: (expr, target) => `<span class="step-target" tabindex="0" data-to="${target.val.s}">${expr}</span>`,
   input: (value, placeholder) => `<x-blank-input solution="${value.val.n}" placeholder="${placeholder ? placeholder.val.s : '???'}"></x-blank-input>`,
-  blank: (...values) => `<x-blank>${values.map(v => `<span class="choice">${v}</span>`).join('')}</x-blank>`,
+  blank: (...values) => `<x-blank>${values.map(v => `<button class="choice">${v}</button>`).join('')}</x-blank>`,
   arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`,
   var: (value) => `<span class="var">\${${value.val.s}}</span>`
 };
@@ -60,12 +60,12 @@ module.exports.getRenderer = function (course, directory) {
 
     if (href.startsWith('target:')) {
       let id = href.slice(7);
-      return `<span class="step-target" data-to="${id}">${text}</span>`;
+      return `<span class="step-target" tabindex="0" data-to="${id}">${text}</span>`;
     }
 
     if (href.startsWith('pill:')) {
       let id = href.slice(5);
-      return `<strong class="pill step-target" data-to="${id}">${text}</strong>`;
+      return `<strong class="pill step-target" tabindex="0" data-to="${id}">${text}</strong>`;
     }
 
     if (href === 'pill') {
@@ -172,7 +172,7 @@ function inlineBlanks(text) {
     if (choices.length === 1)
       return `<x-blank-input solution="${body}"></x-blank-input>`;
 
-    const choiceEls = choices.map(c => `<span class="choice">${c}</span>`);
+    const choiceEls = choices.map(c => `<button class="choice">${c}</button>`);
     return `<x-blank>${choiceEls.join('')}</x-blank>`;
   });
 }
