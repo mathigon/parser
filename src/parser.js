@@ -99,6 +99,11 @@ module.exports.parse = async function (id, content, directory) {
     }
   }
 
+  // Add empty alt attributes
+  for (const $img of doc.querySelectorAll('img:not([alt])')) {
+    $img.setAttribute('alt', '');
+  }
+
   const sections = extractSectionData(doc, course.steps);
   const goals = course.steps.map(s => s.goals.length).reduce((a, b) => a + b);
   const data = {sections, steps: course.steps, goals, title: course.title};
