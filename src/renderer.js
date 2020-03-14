@@ -96,7 +96,8 @@ module.exports.getRenderer = function (course, directory) {
     try {
       const expr = Expression.parse(code);
       const maths = expr.toMathML(customMathML);
-      return newRender ? `<x-math>${maths}</x-math>` : `<span class="math">${maths}</span>`;
+      const voice = expr.toVoice({pill: '', target: '', input: '', blank: ''});
+      return newRender ? `<x-math data-voice="${voice}">${maths}</x-math>` : `<span class="math" data-voice="${voice}">${maths}</span>`;
     } catch (e) {
       console.log(`Maths parsing error in "${code}":`, e.toString());
       return '<span class="math"></span>';
