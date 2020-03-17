@@ -63,6 +63,11 @@ module.exports.getRenderer = function (course, directory) {
       return `<span class="step-target" tabindex="0" data-to="${id}">${text}</span>`;
     }
 
+    if (href.startsWith('action:')) {
+      let id = href.slice(7);
+      return `<button class="var var-action" @click="${id}">${text}</button>`;
+    }
+
     if (href.startsWith('pill:')) {
       let id = href.slice(5);
       return `<strong class="pill step-target" tabindex="0" data-to="${id}">${text}</strong>`;
