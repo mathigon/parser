@@ -65,7 +65,7 @@ module.exports.getRenderer = function (course, directory) {
 
     if (href.startsWith('action:')) {
       let id = href.slice(7);
-      return `<button class="var var-action" @click="${id}">${text}</button>`;
+      return `<button class="var-action" @click="${id}">${text}</button>`;
     }
 
     if (href.startsWith('pill:')) {
