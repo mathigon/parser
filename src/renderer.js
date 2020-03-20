@@ -26,7 +26,10 @@ const codeBlocks = {
 };
 
 const customMathML = {
-  pill: (expr, color, target) => `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`,
+  pill: (expr, color, target) => {
+    if (!target) return `<span class="pill ${color.val.s}">${expr}</span>`;
+    return `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`;
+  },
   target: (expr, target) => `<span class="step-target" tabindex="0" data-to="${target.val.s}">${expr}</span>`,
   input: (value, placeholder) => `<x-blank-input solution="${value.val.n}" placeholder="${placeholder ? placeholder.val.s : '???'}"></x-blank-input>`,
   blank: (...values) => `<x-blank>${values.map(v => `<button class="choice">${v}</button>`).join('')}</x-blank>`,
