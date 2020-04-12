@@ -162,6 +162,8 @@ function extractSectionData(doc, steps) {
       $h1.remove();
     }
 
+    if (!last(sections)) throw new Error('Every course has to start with a section title (##)');
+
     step.section = last(sections).id;
     last(sections).steps.push(step.id);
 
@@ -186,6 +188,7 @@ function extractSectionData(doc, steps) {
 
     // Calculate the reading time per section using 75 words per minute and
     // 30s per interactive goal (plus 1 minutes added above);
+    // TODO Always use the English duration, no matter what the locale is.
     last(sections).duration += $step.textContent.split(/\s+/).length / 75;
     last(sections).duration += step.goals.length / 2;
 
