@@ -39,7 +39,7 @@ const customMathML = {
 };
 
 
-module.exports.getRenderer = function (course, directory) {
+module.exports.getRenderer = function (course, directory, locale='en') {
   const renderer = new marked.Renderer();
 
   let globalPug = '';  // Global Pug code at the beginning of chapters
@@ -106,7 +106,8 @@ module.exports.getRenderer = function (course, directory) {
       const expr = Expression.parse(code);
       const maths = expr.toMathML(customMathML);
       const voice = expr.toVoice({pill: '', target: '', input: '', blank: ''});
-      return newRender ? `<x-math data-voice="${voice}">${maths}</x-math>` : `<span class="math" data-voice="${voice}">${maths}</span>`;
+      const dir = locale === 'ar' ? 'dir="ltr"' : '';
+      return newRender ? `<x-math data-voice="${voice}" ${dir}>${maths}</x-math>` : `<span class="math" data-voice="${voice}" ${dir}>${maths}</span>`;
     } catch (e) {
       console.log(`Maths parsing error in "${code}":`, e.toString());
       return '<span class="math"></span>';

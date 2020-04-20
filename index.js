@@ -80,7 +80,7 @@ async function generate(content, base, id, locale) {
   const dest = path.join(base, '../');
   const shared = path.join(base, '../shared');
 
-  const {bios, gloss, data} = await parse(id, content, base);
+  const {bios, gloss, data} = await parse(id, content, base, locale);
 
   const biosData = await loadYAML(shared, 'bios.yaml', 'bio', locale);
   const biosObj = {};

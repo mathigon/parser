@@ -21,7 +21,7 @@ const minifyOptions = {
 };
 
 
-module.exports.parse = async function (id, content, directory) {
+module.exports.parse = async function (id, content, directory, locale='en') {
   // Replace relative image URLs
   content = content.replace(/(url\(|src="|href="|background="|poster=")images\//g,
       `$1/resources/${id}/images/`);
@@ -53,7 +53,7 @@ module.exports.parse = async function (id, content, directory) {
   const tokens = lexer.lex(content);
 
   const course = {bios: new Set(), gloss: new Set(), steps: [{}], title: ''};
-  const renderer = getRenderer(course, directory);
+  const renderer = getRenderer(course, directory, locale);
   let result = marked.Parser.parse(tokens, {renderer});
 
   // Asynchronously replace all LaTeX Equation placeholders.
@@ -111,9 +111,9 @@ module.exports.parse = async function (id, content, directory) {
   return {bios: course.bios, gloss: course.gloss, data};
 };
 
-module.exports.parseSimple = async function (text) {
+module.exports.parseSimple = async function (text, locale='en') {
   const course = {bios: new Set(), gloss: new Set(), steps: [{}], title: ''};
-  const renderer = getRenderer(course, '');
+  const renderer = getRenderer(course, '', locale);
   let result = marked(text, {renderer});
   result = await fillTexPlaceholders(result);
   const doc = (new JSDom(result)).window.document.body;
