@@ -1,14 +1,16 @@
 # Test Title
-> id: test1
 
-## {#id.class(attr=value)} Passage 1 
+## Section 1 
+
+> id: step1
+> section: section1
 
 Here is a paragraph with _italic_, __bold__, ^suberscript^ and ~subscript~,
 as well as emoji: :smile: and :penguin:
 
 Here is a paragraph with [Biographies](bio:gauss) of [People](bio:euler),
 [Glossary entries](gloss:polygon), [External links](https://mathigon.org), and
-[Targets](->#id_.class).
+[Targets](->#step1).
 
 Here is a paragraph with [[blanks|gaps]] and [[100]] input, as well as
 variables like ${x|1|0,1,10}{x} and ${x}. You can also have _{span.class} blanks
@@ -21,6 +23,7 @@ Here is a paragraph with maths: `x^2 + 4x - 20/2`.
 Here is a special _{small} inline element_
 
 ---
+> id: step2
 
 A **matrix** is a rectangular array of numbers: 
 
@@ -35,6 +38,7 @@ x
 Here are some `{py}code` blocs with `{r} custom `  with `{code} format `.
 
 ---
+> id: step3
 
 Here is another section
 
@@ -48,7 +52,7 @@ Here is another section
 * {.item2} list item with _italic_ and [[blanks|gaps]]
 
 ---
-> id: test2
+> id: step4
 
 Here are PUG includes
 
@@ -59,6 +63,7 @@ and PUG code
     .row
 
 ---
+> id: step5
 
 Here is a table
 
@@ -74,6 +79,7 @@ And a table without header
 {.table-class}
 
 ---
+> id: step6
 
 Here is a paragraph
 
@@ -90,6 +96,7 @@ More text
 More text 
 
 ---
+> id: step7
 
 ::: column(width=410)
 Right Triangle: When a triangle has one right angle.
