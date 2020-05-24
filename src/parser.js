@@ -265,7 +265,12 @@ function blockAttributes(node) {
   lastChild.textContent = lastChild.textContent.replace(match[0], '');
 
   let div = node.ownerDocument.createElement('div');
-  div.innerHTML = pug.render(match[1]);
+  try {
+    div.innerHTML = pug.render(match[1]);
+  } catch(e) {
+    console.warn('Invalid PUG tag', match[1]);
+    return;
+  }
 
   let replaced = div.children[0];
   if (!replaced) return console.warn(`Invalid attribute: {${match[1]}}`);
