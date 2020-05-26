@@ -104,6 +104,14 @@ module.exports.parse = async function (id, content, directory, locale='en') {
     $img.setAttribute('alt', '');
   }
 
+  // RTL overrides
+  const LTR = 'x-geopad, x-coordinate-system, svg, x-var';
+  if (locale === 'ar') {
+    for (const $el of doc.querySelectorAll(LTR)) {
+      $el.setAttribute('dir', 'ltr');
+    }
+  }
+
   const sections = extractSectionData(doc, course.steps);
   const goals = course.steps.map(s => s.goals.length).reduce((a, b) => a + b);
   const data = {sections, steps: course.steps, goals, title: course.title};

@@ -151,7 +151,12 @@ module.exports.getRenderer = function (course, directory, locale='en') {
     const hasMixins = code.split('\n').find(line => line.startsWith('mixin'));
     if (hasMixins) globalPug += code + '\n\n';
 
-    return pug.render(globalPug + code, {filename: directory + '/content.pug'});
+    try {
+      return pug.render(globalPug + code, {filename: directory + '/content.pug'});
+    } catch(e) {
+      console.error('PUG parsing error', e.message);
+      return '';
+    }
   };
 
   renderer.listitem = (text) => {
