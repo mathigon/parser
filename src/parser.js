@@ -23,7 +23,7 @@ const minifyOptions = {
 
 module.exports.parse = async function (id, content, directory, locale='en') {
   // Replace relative image URLs
-  content = content.replace(/(url\(|src="|href="|background="|poster=")images\//g,
+  content = content.replace(/(url\(|src=["`]|href=["`]|background=["`]|poster=["`])images\//g,
       `$1/resources/${id}/images/`);
 
   // Rename special data attributes
