@@ -105,7 +105,7 @@ module.exports.getRenderer = function (course, directory, locale='en') {
     try {
       const expr = Expression.parse(code);
       const maths = expr.toMathML(customMathML);
-      const voice = expr.toVoice({pill: '', target: '', input: '', blank: ''});
+      const voice = expr.toVoice({pill: '', reveal: '', target: '', input: 'blank', blank: 'blank', var: 'var'});
       const dir = locale === 'ar' ? 'dir="ltr"' : '';
       return newRender ? `<x-math data-voice="${voice}" ${dir}>${maths}</x-math>` : `<span class="math" data-voice="${voice}" ${dir}>${maths}</span>`;
     } catch (e) {

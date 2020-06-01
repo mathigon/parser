@@ -12,6 +12,7 @@ const minify = require('html-minifier').minify;
 const {last} = require('@mathigon/core');
 const {fillTexPlaceholders} = require('./mathjax');
 const {getRenderer} = require('./renderer');
+const {addNarrationTags} = require('./audio');
 
 
 const minifyOptions = {
@@ -59,17 +60,18 @@ module.exports.parse = async function (id, content, directory, locale='en') {
   // Asynchronously replace all LaTeX Equation placeholders.
   result = await fillTexPlaceholders(result);
 
-  const doc = (new JSDom('<x-step>' + result + '</x-step>')).window.document.body;
+  const doc = (new JSDom('<x-step>' + result + '</x-step>')).window.document;
+  const body = doc.body;
 
   // Parse custom element attributess
   // TODO Parse attributes for <ul> and <table>
-  for (let n of nodes(doc)) blockAttributes(n);
+  for (let n of nodes(body)) blockAttributes(n);
 
   // Add <nowrap> elements around inline-block elements.
-  lineBreaks(doc);
+  lineBreaks(body);
 
   // Parse markdown inside HTML elements with .md class
-  const $md = doc.querySelectorAll('.md');
+  const $md = body.querySelectorAll('.md');
   for (let i = 0; i < $md.length; ++i) {
     $md[i].classList.remove('md');
     let html = marked($md[i].innerHTML, {renderer}).replace(/^<p>|<\/p>$/g, '');
@@ -78,7 +80,7 @@ module.exports.parse = async function (id, content, directory, locale='en') {
   }
 
   // Add the [parent] attribute as class to all elements parents
-  const $parents = doc.querySelectorAll('[parent]');
+  const $parents = body.querySelectorAll('[parent]');
   for (let $p of $parents) {
     const classes = $p.getAttribute('parent').split(' ');
     $p.removeAttribute('parent');
@@ -86,12 +88,12 @@ module.exports.parse = async function (id, content, directory, locale='en') {
   }
 
   // Remove empty table headers
-  for (let $th of doc.querySelectorAll('thead')) {
+  for (let $th of body.querySelectorAll('thead')) {
     if (!$th.textContent.trim()) $th.remove();
   }
 
   // Allow setting a class attribute in the last row of a table
-  for (let $td of doc.querySelectorAll('td[class]')) {
+  for (let $td of body.querySelectorAll('td[class]')) {
     if (!$td.parentElement.textContent.trim()) {
       const $table = $td.parentElement.parentElement.parentElement;
       $table.setAttribute('class', $td.getAttribute('class'));
@@ -100,19 +102,22 @@ module.exports.parse = async function (id, content, directory, locale='en') {
   }
 
   // Add empty alt attributes
-  for (const $img of doc.querySelectorAll('img:not([alt])')) {
+  for (const $img of body.querySelectorAll('img:not([alt])')) {
     $img.setAttribute('alt', '');
   }
 
   // RTL overrides
   const LTR = 'x-geopad, x-coordinate-system, svg, x-var';
   if (locale === 'ar') {
-    for (const $el of doc.querySelectorAll(LTR)) {
+    for (const $el of body.querySelectorAll(LTR)) {
       $el.setAttribute('dir', 'ltr');
     }
   }
 
-  const sections = extractSectionData(doc, course.steps);
+  // Create sentence elements for audio narrations
+  addNarrationTags(doc, directory, locale);
+
+  const sections = extractSectionData(body, course.steps);
   const goals = course.steps.map(s => s.goals.length).reduce((a, b) => a + b);
   const data = {sections, steps: course.steps, goals, title: course.title};
 

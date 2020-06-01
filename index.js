@@ -12,6 +12,7 @@ const yaml = require('yamljs');
 const File = require('vinyl');
 
 const {parse, parseSimple} = require('./src/parser');
+const {getAudioTimings, writeAudioTimings, extractText, textHash} = require('./src/audio');
 
 const YAML_CACHE = new Map();
 
@@ -146,3 +147,7 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
 module.exports.parseFull = parse;
 module.exports.parseSimple = parseSimple;
 module.exports.loadYAML = loadYAML;
+module.exports.getAudioTimings = getAudioTimings;
+module.exports.writeAudioTimings = writeAudioTimings;
+module.exports.extractText = extractText;
+module.exports.textHash = textHash;
