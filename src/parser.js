@@ -28,7 +28,7 @@ module.exports.parse = async function (id, content, directory, locale='en') {
       `$1/resources/${id}/images/`);
 
   // Rename special data attributes
-  content = content.replace(/(when|delay|animation|duration)=/g, 'data-$1=');
+  content = content.replace(/(when|delay|animation|duration|voice)=/g, 'data-$1=');
 
   // Custom Markdown Extensions
   content = blockIndentation(content);

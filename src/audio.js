@@ -29,13 +29,22 @@ function extractText(el) {
         .replace(/−/g, ' minus ');
   }
 
-  if (el.hasAttribute('data-voice')) return el.getAttribute('data-voice');
+  if (el.hasAttribute('data-voice')) {
+    // Make sure allsingle-letter variables (surrounded by _s) are spelled out.
+    return el.getAttribute('data-voice')
+        .replace(/_(\w)_/g, '<say-as interpret-as="spell-out">$1</say-as>')
+  }
+
+  if (el.classList.contains('no-audio')) return '';
   if (el.classList.contains('next-step')) return '';
   if (el.tagName === 'BR') return ', ';
-  if (['X-BLANK', 'X-BLANK-INPUT'].includes(el.tagName)) return 'blank';  // TODO
-  if (el.tagName === 'X-VAR') return el.getAttribute('bind').split('|')[1];  // TODO
-  if (el.classList.contains('var')) return 'variable'; // TODO
-  // TODO Fix variables and blanks.
+
+  // TODO Read blank options or correct solution
+  if (['X-BLANK', 'X-BLANK-INPUT'].includes(el.tagName)) return 'blank';
+
+  // TODO Read correct value of variables
+  if (el.tagName === 'X-VAR') return el.getAttribute('bind').split('|')[1];
+  if (el.classList.contains('var')) return 'variable';
 
   return Array.from(el.childNodes).map(c => extractText(c)).join('');
 }
@@ -54,6 +63,13 @@ function makeSentence(doc, paragraph, child) {
 }
 
 function splitIntoSentences(doc, paragraph, timings, nested = false) {
+  // TODO Support paragraphs inside slideshows and algebra flows.
+  let parent = paragraph;
+  while (parent) {
+    if (['X-ALGEBRA-FLOW', 'X-SLIDESHOW'].includes(parent.tagName)) return;
+    parent = parent.parentNode
+  }
+
   // TODO Fix things like "e.g."
 
   const sentences = [];

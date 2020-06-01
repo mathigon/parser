@@ -38,6 +38,18 @@ const customMathML = {
   var: (value) => `<span class="var">\${${value.val.s}}</span>`
 };
 
+const customVoice = {
+  pill: (expr) => `${expr}`,
+  target: (expr) => `${expr}`,
+  reveal: (expr) => `${expr}`,
+  input: () => 'blank',
+  blank: () => 'blank',
+  bar: (expr) => `${expr}`,
+  vec: (expr) => `${expr}`,
+  arc: (expr) => `${expr}`,
+  var: (expr) => `${expr}`,
+};
+
 
 module.exports.getRenderer = function (course, directory, locale='en') {
   const renderer = new marked.Renderer();
@@ -105,7 +117,7 @@ module.exports.getRenderer = function (course, directory, locale='en') {
     try {
       const expr = Expression.parse(code);
       const maths = expr.toMathML(customMathML);
-      const voice = expr.toVoice({pill: '', reveal: '', target: '', input: 'blank', blank: 'blank', var: 'var'});
+      const voice = expr.toVoice(customVoice);
       const dir = locale === 'ar' ? 'dir="ltr"' : '';
       return newRender ? `<x-math data-voice="${voice}" ${dir}>${maths}</x-math>` : `<span class="math" data-voice="${voice}" ${dir}>${maths}</span>`;
     } catch (e) {
