@@ -28,7 +28,7 @@ const codeBlocks = {
 const customMathML = {
   pill: (expr, color, target) => {
     if (!target) return `<span class="pill ${color.val.s}">${expr}</span>`;
-    return `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}">${expr}</span>`;
+    return `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}" tabindex="0">${expr}</span>`;
   },
   target: (expr, target) => `<span class="step-target" tabindex="0" data-to="${target.val.s}">${expr}</span>`,
   reveal: (expr, when) => `<mrow class="reveal" data-when="${when.val.s}">${expr}</mrow>`,
