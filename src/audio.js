@@ -35,7 +35,7 @@ function extractText(el) {
         .replace(/_(\w)_/g, '<say-as interpret-as="spell-out">$1</say-as>')
   }
 
-  if (el.classList.contains('no-audio')) return '';
+  if (el.classList.contains('no-voice')) return '';
   if (el.classList.contains('next-step')) return '';
   if (el.tagName === 'BR') return ', ';
 
@@ -57,7 +57,7 @@ function textHash(text) {
 
 function makeSentence(doc, paragraph, child) {
   let sentence = doc.createElement('span');
-  sentence.classList.add('audio-s');
+  sentence.classList.add('sentence');
   paragraph.insertBefore(sentence, child);
   return sentence;
 }
@@ -133,7 +133,7 @@ function splitIntoSentences(doc, paragraph, timings, nested = false) {
 
   // Add class to parent <p>, only if there is a valid child sentence.
   if (!nested && paragraph.querySelectorAll('[data-timings]').length) {
-    paragraph.classList.add('audio-p');
+    paragraph.classList.add('voice');
   }
 }
 
@@ -142,7 +142,7 @@ function addNarrationTags(doc, directory, locale) {
   if (locale !== 'en') return;
 
   const timings = getAudioTimings(directory, locale);
-  const el = doc.querySelectorAll('p:not(.caption):not(.todo):not(.no-audio), li');
+  const el = doc.querySelectorAll('p:not(.caption):not(.todo):not(.no-voice), li:not(.no-voice), .voice');
   const paragraphs = Array.from(el).filter(p => p.textContent.trim());
   for (const p of paragraphs) splitIntoSentences(doc, p, timings);
 }
