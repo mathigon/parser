@@ -130,7 +130,9 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
       cacheData[id + '-' + locale] = hash;
 
       console.log(`>> Parsing ${id} / ${locale}`);
-      promises.push(generate(content, file.path, id, locale))
+      promises.push(generate(content, file.path, id, locale).catch((error) => {
+        console.error(`Failed to parse ${id} / ${locale}:`, error.message);
+      }));
     }
 
     if (cacheFile) fs.writeFileSync(cacheFile, JSON.stringify(cacheData));
