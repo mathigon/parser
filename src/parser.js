@@ -92,6 +92,11 @@ module.exports.parse = async function (id, content, directory, locale='en') {
     if (!$th.textContent.trim()) $th.remove();
   }
 
+  // Box titles
+  for (const $b of body.querySelectorAll('.box')) {
+    if ($b.querySelector('h3, .tabs')) $b.classList.add('with-title');
+  }
+
   // Allow setting a class attribute in the last row of a table
   for (let $td of body.querySelectorAll('td[class]')) {
     if (!$td.parentElement.textContent.trim()) {
