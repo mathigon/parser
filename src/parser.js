@@ -132,7 +132,7 @@ module.exports.parse = async function (id, content, directory, locale='en') {
 module.exports.parseSimple = async function (text, locale='en') {
   const course = {bios: new Set(), gloss: new Set(), steps: [{}], title: ''};
   const renderer = getRenderer(course, '', locale);
-  let result = marked(text, {renderer});
+  let result = marked(blockIndentation(text), {renderer});
   result = await fillTexPlaceholders(result);
   const doc = (new JSDom(result)).window.document.body;
   for (let n of nodes(doc)) blockAttributes(n);
