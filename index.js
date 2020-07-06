@@ -146,7 +146,7 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
       }));
     }
 
-    console.log(`>> Parsing ${id} [${locales.join(', ')}]`);
+    if (locales.length) console.log(`>> Parsing ${id} [${locales.join(', ')}]`);
     if (cacheFile) fs.writeFileSync(cacheFile, JSON.stringify(cacheData));
 
     const fileSets = await Promise.all(promises);
