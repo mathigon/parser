@@ -21,10 +21,9 @@ MathJax.config({
   }
 });
 
-MathJax.start();
-
 const mathJaxCache = {};
 let mathJaxCount = 0;
+let started = false;
 
 module.exports.makeTexPlaceholder = function(code, isInline = false) {
   code = entities.decode(code);
@@ -43,11 +42,15 @@ function cleanSvg(svg) {
 }
 
 function texToSvg(code, isInline) {
+  if (!started) MathJax.start();
+  started = true;
+
   return new Promise((resolve) => {
     const format = isInline ? 'inline-TeX' : 'TeX';
     MathJax.typeset({math: code, format, svg: true}, (data) => {
       if (data.errors) {
         console.warn(`\nMathJax Error: ${data.errors} at "${code}"`);
+        return resolve('');
       }
       const svg = cleanSvg(data.svg || '');
       mathJaxStore[code + isInline] = svg;
