@@ -174,6 +174,7 @@ function extractSectionData(doc, steps) {
         id: checkId(step.section) || $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, ''),
         title: $h1.textContent,
         status: step.sectionStatus || '',
+        translated: step.translated || '',
         preview: step.sectionPreview || undefined,
         background: step.sectionBackground || '',
         goals: 0, duration: 1, steps: []
