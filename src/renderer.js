@@ -197,11 +197,15 @@ function inlineBlanks(text) {
   return text.replace(/\[\[([^\]]+)]]/g, (x, body) => {
     const choices = body.split('|');
 
-    if (choices.length === 1)
-      return `<x-blank-input solution="${body}"></x-blank-input>`;
+    if (choices.length === 1) {
+      const [_1, value, _2, hint] = (/^([^(]+)(\((.*)\))?\s*$/g).exec(body);
+      const hintAttr = hint ? `hint="${hint}"` : ''
+      return `<x-blank-input solution="${value}" ${hintAttr}></x-blank-input>`;
 
-    const choiceEls = choices.map(c => `<button class="choice">${c}</button>`);
-    return `<x-blank>${choiceEls.join('')}</x-blank>`;
+    } else {
+      const choiceEls = choices.map(c => `<button class="choice">${c}</button>`);
+      return `<x-blank>${choiceEls.join('')}</x-blank>`;
+    }
   });
 }
 

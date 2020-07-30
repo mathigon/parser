@@ -12,9 +12,9 @@ Here is a paragraph with [Biographies](bio:gauss) of [People](bio:euler),
 [Glossary entries](gloss:polygon), [External links](https://mathigon.org), and
 [Targets](->#step1).
 
-Here is a paragraph with [[blanks|gaps]] and [[100]] input, as well as
-variables like ${x|1|0,1,10}{x} and ${x}. You can also have _{span.class} blanks
-inside [[a|b|c]] tags_.
+Here is a paragraph with [[blanks|gaps]] and [[100]] inputs, and inputs with
+[[200 (hints!)]], as well as variables like ${x|1|0,1,10}{x} and ${x}. You
+can also have _{span.class} blanks inside [[a|b|c]] tags_.
 
 Here is a paragraph with maths: `x^2 + 4x - 20/2`.
 
