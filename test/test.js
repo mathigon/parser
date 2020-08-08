@@ -6,18 +6,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const tape = require('tape');
 const {parse} = require('../src/parser');
 
 
-async function run() {
+tape('Parse Markdown', async (t) => {
   const dir = path.join(process.cwd(), 'test');
 
   const source = fs.readFileSync(dir + '/input.md', 'utf8');
   const output = await parse('test', source, dir);
 
-  fs.writeFileSync(dir + '/output.json', JSON.stringify(output.data));
+  const current = fs.readFileSync(dir + '/output.json', 'utf8');
+  const updated = JSON.stringify(output.data, undefined, '  ');
 
-  process.exit();
-}
-
-run();
+  fs.writeFileSync(dir + '/output.json', updated);
+  t.equal(updated, current);
+  t.end();
+});
