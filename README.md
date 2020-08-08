@@ -1,5 +1,7 @@
 # Mathigon Markdown Parser
 
+[![Build Status](https://travis-ci.org/mathigon/parser.svg?branch=master)](https://travis-ci.org/mathigon/parser)
+
 This is a Gulp plugin to parse the
 [custom Markdown format](https://github.com/mathigon/textbooks/wiki/content.md)
 used by [Mathigon’s textbooks](https://github.com/mathigon/textbooks).

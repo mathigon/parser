@@ -15,8 +15,8 @@
   "main": "index.js",
   "repository": "mathigon/parser",
   "dependencies": {
-    "@mathigon/core": "0.5.2",
-    "@mathigon/hilbert": "0.5.2",
+    "@mathigon/core": "^0.5.2",
+    "@mathigon/hilbert": "^0.5.2",
     "html-entities": "^1.2.1",
     "html-minifier": "^4.0.0",
     "jsdom": "^16.0.0",
