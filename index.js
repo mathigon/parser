@@ -147,7 +147,12 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
     }
 
     if (locales.length) console.log(`>> Parsing ${id} [${locales.join(', ')}]`);
-    if (cacheFile) fs.writeFileSync(cacheFile, JSON.stringify(cacheData));
+
+    if (cacheFile) {
+      const dir = path.dirname(cacheFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+      fs.writeFileSync(cacheFile, JSON.stringify(cacheData));
+    }
 
     const fileSets = await Promise.all(promises);
     for (const files of fileSets) {
