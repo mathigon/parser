@@ -19,7 +19,7 @@
     "@mathigon/hilbert": "0.5.2",
     "html-entities": "^1.2.1",
     "html-minifier": "^4.0.0",
-    "jsdom": "^12.2.0",
+    "jsdom": "^16.0.0",
     "marked": "0.6.2",
     "mathjax-node": "^2.1.1",
     "node-emoji": "^1.8.1",
