@@ -9,5 +9,5 @@
     "packagePatterns": ["eslint", "^@types"],
     "automerge": true
   }],
-  "ignoreDeps": ["marked"]
+  "ignoreDeps": ["marked", "mathjax"]
 }

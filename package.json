@@ -21,7 +21,7 @@
     "html-minifier": "^4.0.0",
     "jsdom": "^16.0.0",
     "marked": "0.6.2",
-    "mathjax-node": "^2.1.1",
+    "mathjax": "3.0.1",
     "node-emoji": "^1.8.1",
     "pug": "^3.0.0",
     "through2": "^4.0.0",

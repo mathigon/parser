@@ -4,66 +4,57 @@
 // =============================================================================
 
 
-
 const fs = require('fs');
 const entities = require('html-entities').AllHtmlEntities;
-const MathJax = require('mathjax-node');
-
+const mathjax = require('mathjax');
 
 const cacheFile = __dirname + '/mathjax-cache.tmp';
 const mathJaxStore = fs.existsSync(cacheFile) ? JSON.parse(fs.readFileSync(cacheFile, 'utf-8')) : {};
 
 
-MathJax.config({
-  displayErrors: false,
-  MathJax: {
-    SVG: {linebreaks: {automatic: true, width: '640px'}},
-  }
-});
-
-const mathJaxCache = {};
-let mathJaxCount = 0;
-let started = false;
+const placeholders = {};
+let placeholderCount = 0;
+let promise = undefined;
 
 module.exports.makeTexPlaceholder = function(code, isInline = false) {
-  code = entities.decode(code);
+  const id = entities.decode(code) + (isInline || false);
+  if (id in mathJaxStore) return mathJaxStore[id];
 
-  if ((code + isInline) in mathJaxStore) return mathJaxStore[code + isInline];
-
-  const id = `XEQUATIONX${mathJaxCount++}XEQUATIONX`;
-  mathJaxCache[id] = [code, isInline];
-  return id;
+  const placeholder = `XEQUATIONX${placeholderCount++}XEQUATIONX`;
+  placeholders[placeholder] = [code, isInline];
+  return placeholder;
 };
 
-function cleanSvg(svg) {
-  return svg.replace('role="img" focusable="false" ', '')
-      .replace(' id="MathJax-SVG-1-Title"', '')
-      .replace('aria-labelledby="MathJax-SVG-1-Title"', 'class="mathjax"');
-}
+async function texToSvg(code, isInline) {
+  const id = entities.decode(code) + (isInline || false);
+  if (mathJaxStore[id]) return mathJaxStore[id];
 
-function texToSvg(code, isInline) {
-  if (!started) MathJax.start();
-  started = true;
-
-  return new Promise((resolve) => {
-    const format = isInline ? 'inline-TeX' : 'TeX';
-    MathJax.typeset({math: code, format, svg: true}, (data) => {
-      if (data.errors) {
-        console.warn(`\nMathJax Error: ${data.errors} at "${code}"`);
-        return resolve('');
-      }
-      const svg = cleanSvg(data.svg || '');
-      mathJaxStore[code + isInline] = svg;
-      fs.writeFileSync(cacheFile, JSON.stringify(mathJaxStore));
-      resolve(svg);
-    });
+  if (!promise) promise = mathjax.init({
+    loader: {load: ['input/tex', 'output/svg']},
+    svg: {}  // http://docs.mathjax.org/en/latest/options/output/svg.html#the-configuration-block
   });
+
+  let output = '';
+
+  try {
+    const MathJax = await promise;
+    const svg = await MathJax.tex2svg(code, {display: !isInline});
+    output = MathJax.startup.adaptor.innerHTML(svg)
+        .replace('role="img" focusable="false"', 'class="mathjax"')
+        .replace(/ xmlns(:xlink)?="[^"]+"/g, '');
+  } catch(e) {
+    console.warn(`MathJax Error: ${e.message} at "${code}"`);
+  }
+
+  mathJaxStore[id] = output;
+  fs.writeFileSync(cacheFile, JSON.stringify(mathJaxStore));
+  return output;
 }
 
 module.exports.fillTexPlaceholders = async function(doc) {
   const matches = doc.match(/XEQUATIONX[0-9]+XEQUATIONX/g) || [];
   for (const placeholder of matches) {
-    const code = await texToSvg(...mathJaxCache[placeholder]);
+    const code = await texToSvg(...placeholders[placeholder]);
     doc = doc.replace(placeholder, code);
   }
   return doc;
