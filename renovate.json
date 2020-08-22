@@ -1,13 +1,16 @@
 {
   "extends": ["config:base"],
-  "schedule": ["every weekend"],
+  "schedule": ["before 5am every Saturday"],
   "packageRules": [{
+    "packagePatterns": ["^@mathigon"],
+    "groupName": "mathigon",
+    "automerge": true,
+    "automergeType": "branch"
+  }, {
     "updateTypes": ["patch", "pin", "digest"],
-    "automerge": true
-  },
-  {
-    "packagePatterns": ["eslint", "^@types"],
-    "automerge": true
+    "groupName": "versions",
+    "automerge": true,
+    "automergeType": "branch"
   }],
   "ignoreDeps": ["marked", "mathjax"]
 }
