@@ -27,9 +27,9 @@ Here is a special _{small} inline element_
 
 A **matrix** is a rectangular array of numbers: 
 
-Escape 20\$ and \$20 and 20\ m.
+Escape 20\$ and \$20 and $20 20\ m.
 
-Here is $x$ equation.
+Here is $x$ and $a + y$ and $y$. Here is $a and $b as variables and $20 + $30 as currency.
 
 ``` latex
 x
