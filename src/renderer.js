@@ -30,7 +30,6 @@ const customMathML = {
     if (!target) return `<span class="pill ${color.val.s}">${expr}</span>`;
     return `<span class="pill step-target ${color.val.s}" data-to="${target.val.s}" tabindex="0">${expr}</span>`;
   },
-  target: (expr, target) => `<span class="step-target" tabindex="0" data-to="${target.val.s}">${expr}</span>`,
   reveal: (expr, when) => `<mrow class="reveal" data-when="${when.val.s}">${expr}</mrow>`,
   input: (value, placeholder) => `<x-blank-input solution="${value.val.n}" placeholder="${placeholder ? placeholder.val.s : '???'}"></x-blank-input>`,
   blank: (...values) => `<x-blank>${values.map(v => `<button class="choice">${v}</button>`).join('')}</x-blank>`,
@@ -40,7 +39,6 @@ const customMathML = {
 
 const customVoice = {
   pill: (expr) => `${expr}`,
-  target: (expr) => `${expr}`,
   reveal: (expr) => `${expr}`,
   input: () => 'blank',
   blank: () => 'blank',
@@ -76,7 +74,7 @@ module.exports.getRenderer = function (course, directory, locale='en') {
 
     if (href.startsWith('target:')) {
       let id = href.slice(7);
-      return `<span class="step-target" tabindex="0" data-to="${id}">${text}</span>`;
+      return `<span class="step-target pill" tabindex="0" data-to="${id}">${text}</span>`;
     }
 
     if (href.startsWith('action:')) {
@@ -85,17 +83,13 @@ module.exports.getRenderer = function (course, directory, locale='en') {
     }
 
     if (href.startsWith('pill:')) {
-      let id = href.slice(5);
-      return `<strong class="pill step-target" tabindex="0" data-to="${id}">${text}</strong>`;
-    }
-
-    if (href === 'pill') {
-      return `<strong class="pill">${text}</strong>`;
+      let colour = href.slice(5);
+      return `<strong class="pill ${colour}">${text}</strong>`;
     }
 
     const href1 = entities.decode(href);
     if (href1.startsWith('->')) {
-      return `<x-target to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target>`;
+      return `<x-target class="step-target pill" to="${href1.slice(2).replace(/_/g, ' ')}">${text}</x-target>`;
     }
 
     return `<a href="${href}" target="_blank">${text}</a>`;
