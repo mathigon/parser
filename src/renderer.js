@@ -209,7 +209,7 @@ function inlineEquations(text) {
   //  * the opening $ is prefixed with a \ (for custom override)
   //  * they start with ${} (for variables)
   return text.replace(/(^|[^\\])\$([^{][^$]*?)\$([^\w])/g, (x, prefix, body, suffix) => {
-    return prefix + makeTexPlaceholder(body, true) + suffix;
+    return prefix + makeTexPlaceholder(entities.decode(body), true) + suffix;
   });
 }
 
