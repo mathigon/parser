@@ -44,10 +44,6 @@ module.exports.parse = async function (id, content, directory, locale='en') {
     return `\n\n${header}|${row1}\n|${row2}\n`
   });
 
-  // Disable $ escaping, so that we can do \$.
-  const inlineRules = marked.InlineLexer.rules.normal;
-  inlineRules.escape = new RegExp(inlineRules.escape.source.replace('$', ''));
-
   // Actually Parse the Markdown
   const lexer = new marked.Lexer();
   const tokens = lexer.lex(content);

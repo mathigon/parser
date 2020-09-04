@@ -5,8 +5,7 @@
 > id: step1
 > section: section1
 
-Here is a paragraph with _italic_, __bold__, ^suberscript^ and ~subscript~,
-as well as emoji: :smile: and :penguin:
+Here is a paragraph with _italic_ and __bold__ as well as emoji: :smile: and :penguin:
 
 Here is a paragraph with [Biographies](bio:gauss) of [People](bio:euler),
 [Glossary entries](gloss:polygon), [External links](https://mathigon.org), and
