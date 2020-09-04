@@ -34,7 +34,8 @@ const customMathML = {
   input: (value, placeholder) => `<x-blank-input solution="${value.val.n}" placeholder="${placeholder ? placeholder.val.s : '???'}"></x-blank-input>`,
   blank: (...values) => `<x-blank>${values.map(v => `<button class="choice">${v}</button>`).join('')}</x-blank>`,
   arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`,
-  var: (value) => `<span class="var">\${${value.val.s}}</span>`
+  var: (value) => `<span class="var">\${${value.val.s}}</span>`,
+  class: (value, name) => `<mrow class="${name.val.s}">${expr}</mrow>`
 };
 
 const customVoice = {
@@ -46,6 +47,7 @@ const customVoice = {
   vec: (expr) => `${expr}`,
   arc: (expr) => `${expr}`,
   var: (expr) => `${expr}`,
+  class: (expr) => `${expr}`,
 };
 
 
