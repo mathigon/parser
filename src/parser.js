@@ -46,6 +46,7 @@ module.exports.parse = async function (id, content, directory, locale='en') {
 
   // Actually Parse the Markdown
   const lexer = new marked.Lexer();
+  lexer.tokenizer.rules.block.html = /^<.*[\n]{2,}/;
   const tokens = lexer.lex(content);
 
   const course = {bios: new Set(), gloss: new Set(), steps: [{}], title: ''};

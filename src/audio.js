@@ -5,8 +5,8 @@
 
 
 const fs = require('fs');
-const crypto = require('crypto');
 const yaml = require('yamljs');
+const {textHash} = require('./utilities');
 
 
 function getAudioTimings(directory, locale='en') {
@@ -47,10 +47,6 @@ function extractText(el) {
   if (el.classList.contains('var')) return 'variable';
 
   return Array.from(el.childNodes).map(c => extractText(c)).join('');
-}
-
-function textHash(text) {
-  return crypto.createHash('md5').update(text).digest('hex');
 }
 
 // -----------------------------------------------------------------------------
@@ -152,5 +148,4 @@ function addNarrationTags(doc, directory, locale) {
 module.exports.getAudioTimings = getAudioTimings;
 module.exports.writeAudioTimings = writeAudioTimings;
 module.exports.extractText = extractText;
-module.exports.textHash = textHash;
 module.exports.addNarrationTags = addNarrationTags;

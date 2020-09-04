@@ -15,7 +15,8 @@
         "step4",
         "step5",
         "step6",
-        "step7"
+        "step7",
+        "step8"
       ]
     }
   ],
@@ -30,7 +31,7 @@
         "blank-3",
         "var-0"
       ],
-      "html": "<x-step id=\"step1\" goals=\"blank-0 blank-1 blank-2 blank-3 var-0\"><p><span class=\"sentence\">Here is a paragraph with <em>italic</em> and <strong>bold</strong> as well as emoji: </span><span class=\"sentence\"><img class=\"emoji\" width=\"20\" height=\"20\" src=\"/images/emoji/1f604.png\" alt=\"smile\"> and <img class=\"emoji\" width=\"20\" height=\"20\" src=\"/images/emoji/1f427.png\" alt=\"penguin\"></span></p><p><span class=\"sentence\">Here is a paragraph with <x-bio xid=\"gauss\">Biographies</x-bio> of <span class=\"nowrap\"><x-bio xid=\"euler\">People</x-bio>,</span> <span class=\"nowrap\"><x-gloss xid=\"polygon\">Glossary entries</x-gloss>,</span> <a href=\"https://mathigon.org\" target=\"_blank\">External links</a>, and <span class=\"nowrap\"><x-target class=\"step-target pill\" to=\"#step1\">Targets</x-target>.</span></span></p><p><span class=\"sentence\">Here is a paragraph with <x-blank><button class=\"choice\">blanks</button><button class=\"choice\">gaps</button></x-blank> and <x-blank-input solution=\"100\"></x-blank-input> inputs, and inputs with <span class=\"nowrap\"><x-blank-input solution=\"200 \" hint=\"hints!\"></x-blank-input>,</span> as well as variables like <x-var bind=\"x\">${x|1|0,1,10}</x-var> and <span class=\"var\">${x}</span>. </span><span class=\"sentence\">You can also have <span class=\"class\"> blanks inside <x-blank><button class=\"choice\">a</button><button class=\"choice\">b</button><button class=\"choice\">c</button></x-blank> tags</span>.</span></p><p><span class=\"sentence\">Here is a paragraph with maths: </span><span class=\"sentence\"><span class=\"nowrap\"><span class=\"math\" data-voice=\"_x_ squared plus 4 _x_ minus 20 over 2\"><msup><mi>x</mi><mn>2</mn></msup><mo value=\"+\">+</mo><mn>4</mn><mi>x</mi><mo value=\"−\">−</mo><mfrac><mn>20</mn><mn>2</mn></mfrac></span>.</span></span></p><p class=\"red-wrap\" data-value=\"10\"><span class=\"sentence\"> Here is a paragraph with classes: </span><span class=\"sentence\"><em class=\"red\"> red</em></span></p><p><span class=\"sentence\">Here is a special <small> inline element</small></span></p></x-step>"
+      "html": "<x-step id=\"step1\" goals=\"blank-0 blank-1 blank-2 blank-3 var-0\"><p><span class=\"sentence\">Here is a paragraph with <em>italic</em> and <strong>bold</strong> as well as emoji: </span><span class=\"sentence\"><img class=\"emoji\" width=\"20\" height=\"20\" src=\"/images/emoji/1f604.png\" alt=\"smile\"> and <img class=\"emoji\" width=\"20\" height=\"20\" src=\"/images/emoji/1f427.png\" alt=\"penguin\"></span></p><p><span class=\"sentence\">Here is a paragraph with <x-bio xid=\"gauss\">Biographies</x-bio> of <span class=\"nowrap\"><x-bio xid=\"euler\">People</x-bio>,</span> <span class=\"nowrap\"><x-gloss xid=\"polygon\">Glossary entries</x-gloss>,</span> <a href=\"https://mathigon.org\" target=\"_blank\">External links</a>, and <span class=\"nowrap\"><x-target class=\"step-target pill\" to=\"#step1\">Targets</x-target>.</span></span></p><p><span class=\"sentence\">Here is a paragraph with <x-blank><button class=\"choice\">blanks</button><button class=\"choice\">gaps</button></x-blank> and <x-blank-input solution=\"100\"></x-blank-input> inputs, and inputs with <span class=\"nowrap\"><x-blank-input solution=\"200 \" hint=\"hints!\"></x-blank-input>,</span> as well as variables like <x-var bind=\"x\">${x|1|0,1,10}</x-var> and <span class=\"var\">${x}</span>. </span><span class=\"sentence\">You can also have <span class=\"class\"> blanks inside <x-blank><button class=\"choice\">a</button><button class=\"choice\">b</button><button class=\"choice\">c</button></x-blank> tags</span>.</span></p><p><span class=\"sentence\">Here is a paragraph with maths: </span><span class=\"sentence\"><span class=\"nowrap\"><span class=\"math\" data-voice=\"_x_ squared plus 4 _x_ minus 20 over 2\"><msup><mi>x</mi><mn>2</mn></msup><mo value=\"+\">+</mo><mn>4</mn><mi>x</mi><mo value=\"−\">−</mo><mfrac><mn>20</mn><mn>2</mn></mfrac></span>.</span></span></p><p class=\"red-wrap\" data-value=\"10\"><span class=\"sentence\"> Here is a paragraph with classes: </span><span class=\"sentence\"><em class=\"red\"> red</em></span></p><p><span class=\"sentence\">Here is a special <small> inline element</small></span></p><p><span class=\"sentence\">Some <strong>adjacent</strong><strong>elements</strong> and <em>nested<em>elements</em></em>.</span></p></x-step>"
     },
     {
       "id": "step2",
@@ -70,6 +71,12 @@
       "section": "section1",
       "goals": [],
       "html": "<x-step id=\"step7\" goals=\"\"><div class=\"row padded\"><div style=\"width: 410px\"> <p><span class=\"sentence\">Right Triangle: </span><span class=\"sentence\">When a triangle has one right angle.</span></p></div><div class=\"grow\"> <p><span class=\"sentence\">Obtuse Triangle: </span><span class=\"sentence\">When a triangle has one obtuse angle.</span></p></div><div> <p><span class=\"sentence\">Acute Triangle: </span><span class=\"sentence\">When all three angles in the triangle are acute.</span></p></div></div> <p><span class=\"sentence\">Here is a paragraph</span></p></x-step>"
+    },
+    {
+      "id": "step8",
+      "section": "section1",
+      "goals": [],
+      "html": "<x-step id=\"step8\" goals=\"\"><x-tabbox><div class=\"tab\"> <h3>Title 1</h3><p><span class=\"sentence\">Right Triangle: </span><span class=\"sentence\">When a triangle has one right angle.</span></p></div><div class=\"tab\"> <h3>Title 2</h3><p><span class=\"sentence\">Obtuse Triangle: </span><span class=\"sentence\">When a triangle has one obtuse angle.</span></p></div></x-tabbox> <p><span class=\"sentence\">Here is a paragraph</span></p></x-step>"
     }
   ],
   "goals": 7,

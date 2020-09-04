@@ -8,8 +8,9 @@ const path = require('path');
 const through2 = require('through2');
 
 const {parse, parseSimple} = require('./src/parser');
-const {getAudioTimings, writeAudioTimings, extractText, textHash} = require('./src/audio');
-const {loadFile, loadYAML, warning, createFile, markdownHash, loadFromCache, writeToCache} = require('./src/utilities');
+const {getAudioTimings, writeAudioTimings, extractText} = require('./src/audio');
+const {loadFile, textHash, warning, createFile, markdownHash, loadFromCache, writeToCache} = require('./src/utilities');
+const {loadYAML} = require('./src/yaml');
 
 
 async function combineData(name, parsed, dest, courseId, textField, locale) {
@@ -68,7 +69,7 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
       locales.push(locale);
       const promise = generate(content, file.path, id, locale)
           .catch((error) => {
-            warning(`Failed to parse ${id} [${locale}]:`, error.message);
+            warning(`  Failed to parse ${id} [${locale}]:`, error.message);
             return [];
           })
 

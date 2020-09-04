@@ -7,9 +7,10 @@
 const fs = require('fs');
 const entities = require('html-entities').AllHtmlEntities;
 const mathjax = require('mathjax');
+const {safeReadFile, safeWriteFile, warning} = require('./utilities');
 
 const cacheFile = __dirname + '/mathjax-cache.tmp';
-const mathJaxStore = fs.existsSync(cacheFile) ? JSON.parse(fs.readFileSync(cacheFile, 'utf-8')) : {};
+const mathJaxStore = JSON.parse(safeReadFile(cacheFile, '{}'));
 
 
 const placeholders = {};
@@ -43,11 +44,11 @@ async function texToSvg(code, isInline) {
         .replace('role="img" focusable="false"', 'class="mathjax"')
         .replace(/ xmlns(:xlink)?="[^"]+"/g, '');
   } catch(e) {
-    console.warn(`MathJax Error: ${e.message} at "${code}"`);
+    warning(`  MathJax Error: ${e.message} at "${code}"`);
   }
 
   mathJaxStore[id] = output;
-  fs.writeFileSync(cacheFile, JSON.stringify(mathJaxStore));
+  safeWriteFile(cacheFile, JSON.stringify(mathJaxStore));
   return output;
 }
 

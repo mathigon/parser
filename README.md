@@ -7,6 +7,11 @@ This is a Gulp plugin to parse the
 used by [Mathigon’s textbooks](https://github.com/mathigon/textbooks).
 
 
+## Issues
+
+* Can't upgrade to MarkedJS 1.1.1 because of [this issue](https://github.com/markedjs/marked/issues/1754)
+
+
 ## Contributing
 
 We welcome community contributions: please file any bugs you find or send us

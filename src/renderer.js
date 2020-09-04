@@ -13,6 +13,7 @@ const entities = require('html-entities').AllHtmlEntities;
 const {last} = require('@mathigon/core');
 const {Expression} = require('@mathigon/hilbert');
 const {makeTexPlaceholder} = require('./mathjax');
+const {warning} = require('./utilities');
 
 
 const codeBlocks = {
@@ -35,7 +36,7 @@ const customMathML = {
   blank: (...values) => `<x-blank>${values.map(v => `<button class="choice">${v}</button>`).join('')}</x-blank>`,
   arc: (value) => `<mover>${value}<mo value="⌒">⌒</mo></mover>`,
   var: (value) => `<span class="var">\${${value.val.s}}</span>`,
-  class: (value, name) => `<mrow class="${name.val.s}">${expr}</mrow>`
+  class: (expr, name) => `<mrow class="${name.val.s}">${expr}</mrow>`
 };
 
 const customVoice = {
@@ -117,7 +118,7 @@ module.exports.getRenderer = function (course, directory, locale='en') {
       const dir = locale === 'ar' ? 'dir="ltr"' : '';
       return newRender ? `<x-math data-voice="${voice}" ${dir}>${maths}</x-math>` : `<span class="math" data-voice="${voice}" ${dir}>${maths}</span>`;
     } catch (e) {
-      console.log(`Maths parsing error in "${code}":`, e.toString());
+      warning(`  Maths parsing error in "${code}":`, e.toString());
       return '<span class="math"></span>';
     }
   };

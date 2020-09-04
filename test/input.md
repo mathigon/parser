@@ -21,6 +21,8 @@ Here is a paragraph with maths: `x^2 + 4x - 20/2`.
 
 Here is a special _{small} inline element_
 
+Some __adjacent__**elements** and _nested*elements*_.
+
 ---
 > id: step2
 
@@ -97,6 +99,22 @@ Right Triangle: When a triangle has one right angle.
 Obtuse Triangle: When a triangle has one obtuse angle.
 ::: column
 Acute Triangle: When all three angles in the triangle are acute.
+:::
+
+Here is a paragraph
+
+---
+> id: step8
+
+::: tab
+#### Title 1
+Right Triangle: When a triangle has one right angle.
+::: tab
+
+#### Title 2
+
+Obtuse Triangle: When a triangle has one obtuse angle.
+
 :::
 
 Here is a paragraph

@@ -1,6 +1,6 @@
 {
   "name": "@mathigon/parser",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Custom markdown parsers for Mathigon textbooks.",
   "homepage": "https://mathigon.org/",
   "license": "UNLICENSED",
@@ -20,7 +20,7 @@
     "html-entities": "^1.2.1",
     "html-minifier": "^4.0.0",
     "jsdom": "^16.0.0",
-    "marked": "^1.1.1",
+    "marked": "1.1.0",
     "mathjax": "3.0.1",
     "node-emoji": "^1.8.1",
     "pug": "^3.0.0",
