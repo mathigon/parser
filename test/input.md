@@ -40,13 +40,7 @@ Here are some `{py}code` blocs with `{r} custom `  with `{code} format `.
 ---
 > id: step3
 
-Here is another section
-
-<div class="row">
-  Here is HTML that contains __bold__ and [[blanks|text]].
-  <div>Also, _nested_ HTML!</div>
-</div>
-<div>More [link](url) text</div>
+Here is another section that contains [[blanks|text]] and [links](url).
 
 * {.item1} list item 
 * {.item2} list item with _italic_ and [[blanks|gaps]]

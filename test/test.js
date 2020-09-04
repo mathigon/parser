@@ -17,7 +17,8 @@ tape('Parse Markdown', async (t) => {
   const output = await parse('test', source, dir);
 
   const current = fs.readFileSync(dir + '/output.json', 'utf8');
-  const updated = JSON.stringify(output.data, undefined, '  ');
+  const updated = JSON.stringify(output.data, undefined, '  ')
+      .replace(/MJX-[\w\-]+/g, 'MJX-TEX');  // Fix MathJax element IDs
 
   fs.writeFileSync(dir + '/output.json', updated);
   t.equal(updated, current);
