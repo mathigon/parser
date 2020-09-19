@@ -1,6 +1,6 @@
 {
   "extends": ["config:base"],
-  "schedule": ["before 5am on Saturday"],
+  "schedule": ["on the first day of the month"],
   "packageRules": [{
     "packagePatterns": ["^@mathigon"],
     "groupName": "mathigon",
