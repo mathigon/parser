@@ -208,10 +208,10 @@ function inlineBlanks(text) {
 
 function inlineEquations(text) {
   // We want to match $a$ strings, except
-  //  * the closing $ is immediately followed by a non-word character (e.g. currencies)
+  //  * the closing $ is immediately followed by a word character (e.g. currencies)
   //  * the opening $ is prefixed with a \ (for custom override)
   //  * they start with ${} (for variables)
-  return text.replace(/(^|[^\\])\$([^{][^$]*?)\$([^\w])/g, (x, prefix, body, suffix) => {
+  return text.replace(/(^|[^\\])\$([^{][^$]*?)\$($|[^\w])/g, (_, prefix, body, suffix) => {
     return prefix + makeTexPlaceholder(entities.decode(body), true) + suffix;
   });
 }

@@ -19,6 +19,11 @@ Here is a paragraph with maths: `x^2 + 4x - 20/2`.
 
 {.red-wrap(data-value=10)} Here is a paragraph with classes: _{.red} red_
 
+Here is a multiline equation $ \begin{bmatrix}
+  2 \\\\\\
+  8
+\end{bmatrix}, $ and an equation at the end of the line $x!$
+
 Here is a special _{small} inline element_
 
 Some __adjacent__**elements** and _nested*elements*_.
@@ -31,6 +36,8 @@ A **matrix** is a rectangular array of numbers:
 Escape 20\$ and \$20 and $20 20\ m.
 
 Here is $x$ and $a + y$ and $y$. Here is $a and $b as variables and $20 + $30 as currency.
+
+
 
 ``` latex
 x
