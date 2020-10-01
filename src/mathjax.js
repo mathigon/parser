@@ -31,7 +31,7 @@ async function texToSvg(code, isInline) {
   if (mathJaxStore[id]) return mathJaxStore[id];
 
   if (!promise) promise = mathjax.init({
-    loader: {load: ['input/tex', 'output/svg']},
+    loader: {load: ['input/tex-full', 'output/svg']},
     svg: {}  // http://docs.mathjax.org/en/latest/options/output/svg.html#the-configuration-block
   });
 
