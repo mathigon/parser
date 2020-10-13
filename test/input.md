@@ -125,3 +125,34 @@ Obtuse Triangle: When a triangle has one obtuse angle.
 :::
 
 Here is a paragraph
+
+---
+> id: step9
+
+Let's test some built-in components [[10]] [[11|12]], ${x}{x|2|1,1,3}
+
+    x-slider(steps=100)
+    x-sortable
+    x-free-text
+    x-quill
+    x-gameplay
+    x-equation
+    x-equation-system: div: x-equation
+    
+    x-slideshow
+      div(slot="stage")
+      p Step 1
+      p Step 2
+      p Step 3
+      
+    x-algebra-flow: ul
+      li Step 1
+      li Step 2
+      li Step 3
+      
+    x-picker
+      .item
+      .item(data-error="wrong")
+      .item
+
+[Continue](btn:next)
