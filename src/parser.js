@@ -13,6 +13,7 @@ const {last} = require('@mathigon/core');
 const {fillTexPlaceholders} = require('./mathjax');
 const {getRenderer} = require('./renderer');
 const {addNarrationTags} = require('./audio');
+const {warning, $$} = require('./utilities');
 
 
 const minifyOptions = {
@@ -141,15 +142,28 @@ module.exports.parseSimple = async function (text, locale='en') {
 // Section and Step Configuration
 
 function checkId(sectionId) {
-  if (sectionId && sectionId.includes('.'))
-    throw new Error(`Step and section IDs cannot contain dots: ${sectionId}`);
-  return sectionId
+  if (sectionId && sectionId.includes('.')) warning(`Step or section IDs cannot contain dots: ${sectionId}`);
+  return sectionId ? sectionId.replace(/\./g, '') : undefined;
 }
 
-function getGoals($step, query, goalName, drop = 0) {
-  const items = Array.from($step.querySelectorAll(query)).slice(drop);
-  return items.map((_, i) => goalName + '-' + i);
-}
+const COMPONENTS = [
+  {query: 'x-blank, x-blank-input', goal: 'blank-$'},
+  {query: 'x-var', goal: 'var-$'},
+  {query: 'x-slider', goal: 'slider-$'},
+  {query: 'x-sortable', goal: 'sortable-$'},
+  {query: 'x-free-text', goal: 'free-text-$'},
+  {query: '.next-step', goal: 'next-$', noAttr: true},
+  {query: 'x-equation, x-equation-system', goal: 'eqn-$', exclude: 'x-equation-system x-equation'}, // Exclude equation *inside* system.
+
+  // These components have multiple goals each, based on their children.
+  {query: 'x-algebra-flow', goal: 'algebra-flow', goals: (e) => $$(e, 'ul li').slice(1).map((c, i) => 'algebra-flow-' + i)},
+  {query: 'x-picker', goal: 'picker', goals: (e) => $$(e, '.item').map((c, i) => c.hasAttribute('data-error') ? '' : 'picker-' + i).filter(g => g)},
+  {query: 'x-slideshow', goal: 'slide', goals: (e) => $$(e, ':scope > *:not([slot="stage"])').slice(1).map((c, i) => 'slide-' + i)},
+
+  // For backwards-compatibility the components dont' have a -0 in their goal.
+  {query: 'x-quill', goal: 'quill'},
+  {query: 'x-gameplay', goal: 'gameplay'},
+];
 
 function extractSectionData(doc, steps) {
   const sections = [];
@@ -158,12 +172,13 @@ function extractSectionData(doc, steps) {
   for (const [i, $step] of $steps.entries()) {
     let step = steps[i];
 
-    // TODO Check that step IDs are unique!
     step.id = checkId(step.id) || 'step-' + i;
+    if (steps.find((s, j) => (j < i && s.id === step.id))) warning(`Duplicate step ID: ${step.id}`);
     $step.id = step.id;
 
     if (step.class) $step.setAttribute('class', step.class);
 
+    // Create a new section
     const $h1 = $step.querySelector('h1');
     if ($h1) {
       sections.push({
@@ -184,21 +199,16 @@ function extractSectionData(doc, steps) {
     last(sections).steps.push(step.id);
 
     // Generate the required goals for all built-in components
-    // TODO Find a more generic solution to handle all this!
     step.goals = step.goals ? step.goals.split(' ') : [];
-    step.goals.push(...getGoals($step, 'x-blank, x-blank-input', 'blank'));
-    step.goals.push(...getGoals($step, '.next-step', 'next'));
-    step.goals.push(...getGoals($step, 'x-var', 'var'));
-    step.goals.push(...getGoals($step, 'x-slider', 'slider'));
-    step.goals.push(...getGoals($step, 'x-sortable', 'sortable'));
-    step.goals.push(...getGoals($step, 'x-equation', 'eqn'));
-    step.goals.push(...getGoals($step, 'x-slideshow .legend', 'slide', 1));
-    step.goals.push(...getGoals($step, 'x-algebra-flow ul li', 'algebra-flow', 1));
-    if ($step.querySelector('x-quill')) step.goals.push('quill');
-    if ($step.querySelector('x-gameplay')) step.goals.push('gameplay');
-    Array.from($step.querySelectorAll('x-picker .item')).forEach(($i, i) => {
-      if (!$i.hasAttribute('data-error')) step.goals.push('picker-' + i);
-    });
+    step.goals.push(...$$($step, '[goal]').map($el => $el.getAttribute('goal')));
+    for (const c of COMPONENTS) {
+      const excluded = c.exclude ? $$($step, c.exclude) : [];
+      for (const [i, item] of $$($step, c.query).filter(c => !excluded.includes(c)).entries()) {
+        const goal = c.goal.replace('$', i);
+        if (!c.noAttr) item.setAttribute('goal', goal);
+        step.goals.push(...(c.goals ? c.goals(item) : [goal]));
+      }
+    }
     $step.setAttribute('goals', step.goals.join(' '));
     last(sections).goals += step.goals.length;
 

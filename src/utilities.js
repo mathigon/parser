@@ -14,6 +14,10 @@ function warning(...msg) {
   console.warn('\x1b[31m', ...msg, '\x1b[0m');
 }
 
+function $$(el, query) {
+  return Array.from(el.querySelectorAll(query));
+}
+
 function safeReadFile(file, fallback = '') {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : fallback;
 }
@@ -71,3 +75,4 @@ module.exports.textHash = textHash;
 module.exports.markdownHash = markdownHash;
 module.exports.loadFromCache = loadFromCache;
 module.exports.writeToCache = writeToCache;
+module.exports.$$ = $$;
