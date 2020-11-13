@@ -9,7 +9,7 @@ const through2 = require('through2');
 
 const {parse, parseSimple} = require('./src/parser');
 const {getAudioTimings, writeAudioTimings, extractText} = require('./src/audio');
-const {loadFile, textHash, warning, createFile, markdownHash, loadFromCache, writeToCache} = require('./src/utilities');
+const {loadFile, textHash, warning, createFile, loadFromCache, writeToCache} = require('./src/utilities');
 const {loadYAML} = require('./src/yaml');
 
 
@@ -63,7 +63,7 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
       const content = loadFile(file.path, 'content.md', locale);
       if (!content) continue;
 
-      const hash = markdownHash(content, file.path);
+      const hash = textHash(content);
       if (loadFromCache(cacheFile, id + '-' + locale) === hash) continue;
 
       locales.push(locale);

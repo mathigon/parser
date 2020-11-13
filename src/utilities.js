@@ -45,15 +45,6 @@ function textHash(text) {
   return crypto.createHash('md5').update(text).digest('hex');
 }
 
-function markdownHash(markdown, dir) {
-  let pugImports = markdown.split('\n')
-      .filter(l => l.match(/^\s{4,}include /))
-      .map(c => c.trim().slice(8))
-      .map(c => path.join(dir, c.match(/\.\w+$/) ? c : c + '.pug'))
-      .map(c => safeReadFile(c));
-  return textHash(markdown + pugImports.join(''));
-}
-
 function loadFromCache(cacheFile, id) {
   return cacheFile && JSON.parse(safeReadFile(cacheFile, '{}'))[id];
 }
@@ -72,7 +63,6 @@ module.exports.warning = warning;
 module.exports.createFile = createFile;
 module.exports.loadFile = loadFile;
 module.exports.textHash = textHash;
-module.exports.markdownHash = markdownHash;
 module.exports.loadFromCache = loadFromCache;
 module.exports.writeToCache = writeToCache;
 module.exports.$$ = $$;
