@@ -52,7 +52,7 @@ const customVoice = {
 };
 
 
-module.exports.getRenderer = function (course, directory, locale='en') {
+module.exports.getRenderer = function (course, directory, locale='en', changeHeadings=true) {
   const renderer = new marked.Renderer();
 
   let globalPug = '';  // Global Pug code at the beginning of chapters
@@ -123,13 +123,15 @@ module.exports.getRenderer = function (course, directory, locale='en') {
     }
   };
 
-  renderer.heading = (text, level) => {
-    if (level === 1) {
-      course.title = text;
-      return '';
-    }
-    return `<h${level - 1}>${text}</h${level - 1}>`;
-  };
+  if (changeHeadings) {
+    renderer.heading = (text, level) => {
+      if (level === 1) {
+        course.title = text;
+        return '';
+      }
+      return `<h${level - 1}>${text}</h${level - 1}>`;
+    };
+  }
 
   renderer.blockquote = (quote) => {
     Object.assign(last(course.steps), yaml.parse(originalP || quote));
