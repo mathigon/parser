@@ -7,7 +7,6 @@
 const yaml = require('yamljs');
 const marked = require('marked');
 const pug = require('pug');
-const emoji = require('node-emoji');
 const entities = require('html-entities').AllHtmlEntities;
 
 const {last} = require('@mathigon/core');
@@ -223,10 +222,7 @@ function inlineVariables(text) {
       .replace(/\${([^}]+)}(?!<\/x-var>)/g, '<span class="var">${$1}</span>');
 }
 
-function emojiImg(symbol, name) {
-  const code = symbol.codePointAt(0).toString(16);
-  return `<img class="emoji" width="20" height="20" src="/images/emoji/${code}.png" alt="${name}"/>`;
-}
+const emojiURL = 'https://static.mathigon.org/emoji';
 
 function parseParagraph(text) {
   // TODO Find a way to directly override the MarkedJS lexer.
@@ -237,5 +233,6 @@ function parseParagraph(text) {
   // Replace non-breaking space and escaped $s.
   text = text.replace(/\\ /g, '&nbsp;').replace(/\\\$/g, '$');
 
-  return emoji.emojify(text, x => x, emojiImg);
+  return text.replace(/:([a-zA-Z0-9_\-+]+):/g, (_, name) =>
+      `<img class="emoji" width="20" height="20" src="${emojiURL}/${name}.png" alt="${name}"/>`);
 }
