@@ -1,6 +1,7 @@
 # Mathigon Markdown Parser
 
 [![Build Status](https://travis-ci.org/mathigon/parser.svg?branch=master)](https://travis-ci.org/mathigon/parser)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmathigon%2Fparser.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmathigon%2Fparser?ref=badge_shield)
 
 This is a Gulp plugin to parse the
 [custom Markdown format](https://github.com/mathigon/textbooks/wiki/content.md)
@@ -25,3 +26,6 @@ Contributor License Agreement](https://gist.github.com/plegner/5ad5b7be2948a4ad0
 ## Copyright and License
 
 Copyright © Mathigon ([dev@mathigon.org](mailto:dev@mathigon.org))  
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmathigon%2Fparser.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmathigon%2Fparser?ref=badge_large)
