@@ -7,7 +7,7 @@
 const yaml = require('yamljs');
 const marked = require('marked');
 const pug = require('pug');
-const entities = require('html-entities').AllHtmlEntities;
+const entities = require('html-entities');
 
 const {last} = require('@mathigon/core');
 const {Expression} = require('@mathigon/hilbert');

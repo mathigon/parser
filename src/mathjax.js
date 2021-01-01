@@ -4,8 +4,7 @@
 // =============================================================================
 
 
-const fs = require('fs');
-const entities = require('html-entities').AllHtmlEntities;
+const entities = require('html-entities');
 const mathjax = require('mathjax');
 const {safeReadFile, safeWriteFile, warning} = require('./utilities');
 
