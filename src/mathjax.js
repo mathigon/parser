@@ -41,7 +41,8 @@ async function texToSvg(code, isInline) {
     const svg = await MathJax.tex2svg(code, {display: !isInline});
     output = MathJax.startup.adaptor.innerHTML(svg)
         .replace('role="img" focusable="false"', 'class="mathjax"')
-        .replace(/ xmlns(:xlink)?="[^"]+"/g, '');
+        .replace(/ xmlns(:xlink)?="[^"]+"/g, '')
+        .replace('<defs>', `<title>${entities.encode(code).trim()}</title><defs>`);
   } catch(e) {
     warning(`  MathJax Error: ${e.message} at "${code}"`);
   }

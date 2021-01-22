@@ -193,7 +193,7 @@ module.exports.getRenderer = function (course, directory, locale='en', changeHea
 
 function inlineBlanks(text) {
   return text.replace(/\[\[([^\]]+)]]/g, (x, body) => {
-    const choices = body.split('|');
+    const choices = body.split('§§');  // Replacement for |s because of tables.
 
     if (choices.length === 1) {
       const [_1, value, _2, hint] = (/^([^(]+)(\((.*)\))?\s*$/g).exec(body);

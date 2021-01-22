@@ -45,6 +45,10 @@ module.exports.parse = async function (id, content, directory, locale='en') {
     return `\n\n${header}|${row1}\n|${row2}\n`
   });
 
+  // The |s used to separate answer options in blanks interfere with table
+  // parsing. We temporarily replace them with §§, and then revert later.
+  content = content.replace(/\[\[([^\]]+)]]/g, x => x.replace(/\|/g, '§§'))
+
   // Actually Parse the Markdown
   const lexer = new marked.Lexer();
   lexer.tokenizer.rules.block.html = /^<.*[\n]{2,}/;
@@ -86,7 +90,7 @@ module.exports.parse = async function (id, content, directory, locale='en') {
 
   // Remove empty table headers
   for (let $th of body.querySelectorAll('thead')) {
-    if (!$th.textContent.trim()) $th.remove();
+    if (!$th.textContent.trim() && !$th.querySelector('.mathjax')) $th.remove();
   }
 
   // Box titles
