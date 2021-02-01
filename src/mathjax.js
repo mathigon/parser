@@ -8,7 +8,7 @@ const entities = require('html-entities');
 const mathjax = require('mathjax');
 const {safeReadFile, safeWriteFile, warning} = require('./utilities');
 
-const cacheFile = __dirname + '/mathjax-cache.tmp';
+const cacheFile = '~/.mathjax-cache';
 const mathJaxStore = JSON.parse(safeReadFile(cacheFile, '{}'));
 
 
