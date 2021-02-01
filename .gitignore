@@ -27,6 +27,3 @@ nbproject
 
 # Folders to ignore
 node_modules
-
-# Files to ignore
-mathjax-cache.tmp

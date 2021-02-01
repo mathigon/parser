@@ -8,10 +8,10 @@ const yaml = require('yamljs');
 const marked = require('marked');
 const pug = require('pug');
 const entities = require('html-entities');
+const katex = require('katex');
 
 const {last} = require('@mathigon/core');
 const {Expression} = require('@mathigon/hilbert');
-const {makeTexPlaceholder} = require('./mathjax');
 const {warning} = require('./utilities');
 
 
@@ -49,6 +49,16 @@ const customVoice = {
   var: (expr) => `${expr}`,
   class: (expr) => `${expr}`,
 };
+
+function parseTex(eqn, displayMode = false) {
+  try {
+    // https://katex.org/docs/options.html
+    return katex.renderToString(eqn, {displayMode});
+  } catch(e) {
+    warning(`KaTeX error in "${eqn}": ${e}`);
+    return `<code class="latex">${eqn}</code>`;
+  }
+}
 
 
 module.exports.getRenderer = function (course, directory, locale='en', changeHeadings=true) {
@@ -145,7 +155,7 @@ module.exports.getRenderer = function (course, directory, locale='en', changeHea
   renderer.code = (code, name) => {
     if (name === 'latex') {
       const eqn = '\\begin{align*}' + entities.decode(code) + '\\end{align*}';
-      return `<p class="text-center">${makeTexPlaceholder(eqn, false)}</p>`;
+      return `<p class="text-center">${parseTex(eqn, true)}</p>`;
     }
 
     if (name) {
@@ -213,7 +223,7 @@ function inlineEquations(text) {
   //  * the opening $ is prefixed with a \ (for custom override)
   //  * they start with ${} (for variables)
   return text.replace(/(^|[^\\])\$([^{][^$]*?)\$($|[^\w])/g, (_, prefix, body, suffix) => {
-    return prefix + makeTexPlaceholder(entities.decode(body), true) + suffix;
+    return prefix + parseTex(entities.decode(body)) + suffix;
   });
 }
 

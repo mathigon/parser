@@ -13,9 +13,9 @@ const {loadFile, textHash, warning, createFile, loadFromCache, writeToCache} = r
 const {loadYAML} = require('./src/yaml');
 
 
-async function combineData(name, parsed, dest, courseId, textField, locale) {
+function combineData(name, parsed, dest, courseId, textField, locale) {
   const missing = [];
-  const data = await loadYAML(dest + 'shared', name + '.yaml', textField, locale);
+  const data = loadYAML(dest + 'shared', name + '.yaml', textField, locale);
   const obj = {};
 
   for (let id of parsed) {
@@ -33,18 +33,18 @@ async function combineData(name, parsed, dest, courseId, textField, locale) {
   return createFile(dest, `${courseId}/${name}_${locale}.json`, JSON.stringify(obj));
 }
 
-async function generate(content, base, id, locale) {
-  const {bios, gloss, data} = await parse(id, content, base, locale);
+function generate(content, base, id, locale) {
+  const {bios, gloss, data} = parse(id, content, base, locale);
   const dest = path.join(base, '../');
 
-  const biosFile = await combineData('bios', bios, dest, id, 'bio', locale);
-  const glossFile = await combineData('glossary', gloss, dest, id, 'text', locale);
+  const biosFile = combineData('bios', bios, dest, id, 'bio', locale);
+  const glossFile = combineData('glossary', gloss, dest, id, 'text', locale);
 
-  const quizObj = await loadYAML(base, 'quiz.yaml', 'text,choices,hints', locale);
+  const quizObj = loadYAML(base, 'quiz.yaml', 'text,choices,hints', locale);
   const quizFile = createFile(dest, `${id}/quiz_${locale}.json`, JSON.stringify(quizObj));
 
-  const courseHints = await loadYAML(base, 'hints.yaml', '*', locale);
-  const globalHints = await loadYAML(dest + 'shared', 'hints.yaml', '*', locale);
+  const courseHints = loadYAML(base, 'hints.yaml', '*', locale);
+  const globalHints = loadYAML(dest + 'shared', 'hints.yaml', '*', locale);
   const hintsObj = Object.assign({}, globalHints, courseHints);
   const hintsFile = createFile(dest, `${id}/hints_${locale}.json`, JSON.stringify(hintsObj));
 
@@ -53,10 +53,10 @@ async function generate(content, base, id, locale) {
 }
 
 module.exports.gulp = (languages = ['en'], cacheFile = '') => {
-  return through2.obj(async function (file, _, next) {
+  return through2.obj(function(file, _, next) {
     const id = file.basename;
 
-    const promises = [];
+    const fileSets = [];
     const locales = [];
 
     for (let locale of languages) {
@@ -67,19 +67,16 @@ module.exports.gulp = (languages = ['en'], cacheFile = '') => {
       if (loadFromCache(cacheFile, id + '-' + locale) === hash) continue;
 
       locales.push(locale);
-      const promise = generate(content, file.path, id, locale)
-          .catch((error) => {
-            warning(`  Failed to parse ${id} [${locale}]:`, error.message);
-            return [];
-          })
-
-      promise.then(() => writeToCache(cacheFile, id + '-' + locale, hash));
-      promises.push(promise);
+      try {
+        fileSets.push(generate(content, file.path, id, locale));
+        writeToCache(cacheFile, id + '-' + locale, hash);
+      } catch(error) {
+        warning(`  Failed to parse ${id} [${locale}]:`, error.message);
+      }
     }
 
-    if (locales.length) console.log(`>> Parsing ${id} [${locales.join(', ')}]`);
+    if (locales.length) console.log(`>> Parsed ${id} [${locales.join(', ')}]`);
 
-    const fileSets = await Promise.all(promises);
     for (const files of fileSets) {
       for (const f of files) this.push(f);
     }
