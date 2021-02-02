@@ -4,13 +4,11 @@
   "packageRules": [{
     "packagePatterns": ["^@mathigon"],
     "groupName": "mathigon",
-    "automerge": true,
-    "automergeType": "branch"
+    "automerge": true
   }, {
     "updateTypes": ["patch", "pin", "digest"],
     "groupName": "versions",
-    "automerge": true,
-    "automergeType": "branch"
+    "automerge": true
   }],
   "ignoreDeps": ["marked", "mathjax"]
 }
