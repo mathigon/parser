@@ -1,6 +1,6 @@
 {
   "name": "@mathigon/parser",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Custom markdown parsers for Mathigon textbooks.",
   "homepage": "https://mathigon.org/",
   "license": "UNLICENSED",

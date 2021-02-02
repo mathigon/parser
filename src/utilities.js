@@ -37,7 +37,7 @@ function createFile(dest, name, content) {
 }
 
 function loadFile(root, name, locale) {
-  if (locale !== 'en') name = 'translations/' + name.replace('.', `_${locale}.`);
+  if (locale !== 'en') root = root.replace('/content/', `/translations/${locale}/`);
   return safeReadFile(path.join(root, name));
 }
 
