@@ -4,13 +4,14 @@
 // =============================================================================
 
 
+const path = require('path');
 const entities = require('html-entities');
 const mathjax = require('mathjax');
 const {safeReadFile, safeWriteFile, warning} = require('./utilities');
 
-const cacheFile = '~/.mathjax-cache';
+const cacheFile = path.join(process.env.HOME, '/.mathjax-cache');
 const mathJaxStore = JSON.parse(safeReadFile(cacheFile, '{}'));
-
+let storeChanged = false;
 
 const placeholders = {};
 let placeholderCount = 0;
@@ -47,9 +48,8 @@ async function texToSvg(code, isInline) {
     warning(`  MathJax Error: ${e.message} at "${code}"`);
   }
 
-  mathJaxStore[id] = output;
-  safeWriteFile(cacheFile, JSON.stringify(mathJaxStore));
-  return output;
+  storeChanged = true;
+  return mathJaxStore[id] = output;
 }
 
 module.exports.fillTexPlaceholders = async function(doc) {
@@ -58,5 +58,10 @@ module.exports.fillTexPlaceholders = async function(doc) {
     const code = await texToSvg(...placeholders[placeholder]);
     doc = doc.replace(placeholder, code);
   }
+
+  // Write the updated JSON to file
+  if (storeChanged) safeWriteFile(cacheFile, JSON.stringify(mathJaxStore));
+  storeChanged = false;
+
   return doc;
 };

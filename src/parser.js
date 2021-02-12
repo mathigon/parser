@@ -187,7 +187,7 @@ function extractSectionData(doc, steps) {
     if ($h1) {
       sections.push({
         id: checkId(step.section) || $h1.textContent.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, ''),
-        title: $h1.textContent,
+        title: $h1.textContent.replace(/\\/g, ''), // No escape characters in title strings
         status: step.sectionStatus || '',
         translated: step.translated || '',
         preview: step.sectionPreview || undefined,
