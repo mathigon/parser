@@ -1,3 +1,5 @@
+# :warning: This Repository is archived! Use [@mathigon/studio](https://github.com/mathigon/studio) instead!
+
 # Mathigon Markdown Parser
 
 [![Build Status](https://github.com/mathigon/parser/workflows/CI%20Tests/badge.svg)](https://github.com/mathigon/parser/actions?query=workflow%3A%22CI+Tests%22)
